@@ -1,0 +1,2899 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🛒 e-tsena — Gestion de Buvette</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+  body { background: #f0f4f8; color: #1a202c; }
+  header { background: linear-gradient(135deg, #2b6cb0, #2c5282); color: white; padding: 14px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 6px rgba(0,0,0,.15); flex-wrap: wrap; gap: 10px; }
+  header h1 { font-size: 22px; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+  header h1 span.logo { background: #f6e05e; color: #744210; padding: 4px 10px; border-radius: 8px; font-weight: 900; }
+  header .user-info { font-size: 13px; display: flex; align-items: center; gap: 8px; }
+  header .user-info .badge-user { background: rgba(255,255,255,.2); padding: 4px 10px; border-radius: 6px; font-weight: 600; }
+  header .actions button { background: #48bb78; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; margin-left: 6px; font-size: 13px; font-weight:600; }
+  header .actions button:hover { background: #38a169; }
+  header .actions button.logout { background: #e53e3e; }
+  header .actions button.logout:hover { background: #c53030; }
+
+  /* ÉCRAN DE CONNEXION */
+  .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #2b6cb0, #2c5282); padding: 20px; }
+  .login-box { background: white; border-radius: 16px; padding: 34px; max-width: 440px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  .login-box h2 { color: #2c5282; text-align: center; margin-bottom: 6px; font-size: 26px; }
+  .login-box .subtitle { text-align: center; color: #718096; font-size: 13px; margin-bottom: 22px; }
+  .login-box .field { display: flex; flex-direction: column; margin-bottom: 14px; }
+  .login-box .field label { font-size: 12px; font-weight: 600; color: #4a5568; margin-bottom: 4px; }
+  .login-box .field input { padding: 11px 14px; font-size: 15px; }
+  .login-box .btn-login { width: 100%; padding: 12px; font-size: 15px; background: #3182ce; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; margin-bottom: 10px; }
+  .login-box .btn-login:hover { background: #2b6cb0; }
+  .login-box .btn-guest { width: 100%; padding: 12px; font-size: 15px; background: #718096; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; }
+  .login-box .btn-guest:hover { background: #4a5568; }
+  .login-box .error-msg { color: #e53e3e; font-size: 13px; margin-top: 8px; text-align: center; font-weight: 600; }
+  .login-box .logo-big { text-align: center; font-size: 44px; margin-bottom: 10px; }
+
+  /* APP */
+  #appContainer { display: none; }
+  nav.tabs { display: flex; background: #fff; border-bottom: 2px solid #e2e8f0; overflow-x: auto; }
+  nav.tabs button { flex: 1; min-width: 115px; padding: 13px 8px; border: none; background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; color: #4a5568; border-bottom: 3px solid transparent; transition: .2s; }
+  nav.tabs button:hover { background: #edf2f7; }
+  nav.tabs button.active { color: #2b6cb0; border-bottom-color: #2b6cb0; background: #ebf4ff; }
+  nav.tabs button.hidden { display: none; }
+
+  main { padding: 20px; max-width: 1500px; margin: auto; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fade .3s; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .card { background: white; border-radius: 10px; padding: 18px; margin-bottom: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .card h2 { color: #2c5282; margin-bottom: 12px; font-size: 18px; border-left: 4px solid #4299e1; padding-left: 10px; }
+
+  .form-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
+  .form-row .field { display: flex; flex-direction: column; flex: 1; min-width: 120px; }
+  .form-row label { font-size: 12px; font-weight: 600; color: #4a5568; margin-bottom: 3px; }
+  input, select, textarea { padding: 8px 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; outline: none; background: #fff; font-family: inherit; }
+  input:focus, select:focus, textarea:focus { border-color: #4299e1; box-shadow: 0 0 0 3px rgba(66,153,225,.2); }
+  input[readonly] { background: #edf2f7; cursor: not-allowed; }
+
+  button.btn { padding: 9px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; transition: .2s; }
+  button.btn-primary { background: #3182ce; color: white; }
+  button.btn-primary:hover { background: #2b6cb0; }
+  button.btn-success { background: #38a169; color: white; }
+  button.btn-success:hover { background: #2f855a; }
+  button.btn-warn { background: #dd6b20; color: white; }
+  button.btn-warn:hover { background: #c05621; }
+  button.btn-danger { background: #e53e3e; color: white; }
+  button.btn-danger:hover { background: #c53030; }
+  button.btn-purple { background: #805ad5; color: white; }
+  button.btn-purple:hover { background: #6b46c1; }
+  button.btn-sm { padding: 5px 10px; font-size: 12px; }
+  button.btn-xs { padding: 3px 7px; font-size: 11px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+  th { background: #edf2f7; color: #2d3748; font-weight: 700; font-size: 12px; text-transform: uppercase; }
+  tr:hover td { background: #f7fafc; }
+
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+  .badge-ok { background: #c6f6d5; color: #22543d; }
+  .badge-warn { background: #feebc8; color: #7b341e; }
+  .badge-danger { background: #fed7d7; color: #742a2a; animation: pulse 1.4s infinite; }
+  .badge-info { background: #bee3f8; color: #2a4365; }
+  .badge-cat { background: #e9d8fd; color: #553c9a; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+
+  .alert-box { background: #fff5f5; border-left: 4px solid #e53e3e; color: #742a2a; padding: 12px 15px; border-radius: 6px; margin-bottom: 12px; font-weight: 600; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .stat { background: white; border-radius: 10px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.08); border-left: 5px solid #4299e1; }
+  .stat h4 { font-size: 11px; color: #718096; text-transform: uppercase; margin-bottom: 5px; }
+  .stat .value { font-size: 22px; font-weight: 800; color: #1a202c; }
+  .stat.green { border-left-color: #38a169; }
+  .stat.orange { border-left-color: #dd6b20; }
+  .stat.red { border-left-color: #e53e3e; }
+  .stat.purple { border-left-color: #805ad5; }
+
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+  .chart-box { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .chart-box h3 { font-size: 14px; color: #2c5282; margin-bottom: 10px; }
+
+  .empty { text-align: center; color: #a0aec0; padding: 20px; font-style: italic; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: #2d3748; color: white; padding: 12px 18px; border-radius: 8px; opacity: 0; transform: translateY(20px); transition: .3s; z-index: 9999; font-size: 14px; max-width: 340px; }
+  .toast.show { opacity: 1; transform: none; }
+  .toast.ok { background: #38a169; }
+  .toast.err { background: #e53e3e; }
+
+  .subtabs { display: flex; background: #edf2f7; border-bottom: 2px solid #cbd5e0; border-radius: 10px 10px 0 0; overflow: hidden; margin-bottom: 18px; flex-wrap: wrap; }
+  .subtab { flex: 1; min-width: 150px; padding: 11px; border: none; background: transparent; cursor: pointer; font-weight: 700; color: #4a5568; border-bottom: 3px solid transparent; transition:.2s; font-size: 13px; }
+  .subtab:hover { background: #e2e8f0; }
+  .subtab.active { color: #2b6cb0; border-bottom: 3px solid #2b6cb0; background: #fff; }
+  .subtab-content { display: none; }
+  .subtab-content.active { display: block; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1000; align-items: center; justify-content: center; padding: 15px; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: white; border-radius: 12px; padding: 22px; max-width: 680px; width: 100%; max-height: 92vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,.3); }
+  .modal h3 { color: #2c5282; margin-bottom: 14px; border-left: 4px solid #4299e1; padding-left: 10px; font-size: 18px; }
+  .modal .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .modal .field { display: flex; flex-direction: column; margin-bottom: 10px; }
+  .modal .field label { font-size: 12px; font-weight: 600; color: #4a5568; margin-bottom: 3px; }
+  .modal .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .commande-banner { background: linear-gradient(135deg, #fef3c7, #fde68a); border-left: 5px solid #dd6b20; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px; color: #7c2d12; font-weight: 700; }
+  .info-banner { background: #ebf8ff; border-left: 5px solid #3182ce; padding: 12px 16px; border-radius: 8px; margin-bottom: 14px; color: #2a4365; font-weight: 600; font-size: 13px; }
+
+  .cond-tag { display:inline-block; background:#e9d8fd; color:#553c9a; padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 700; margin: 2px; }
+  .cond-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; padding: 6px; background: #f7fafc; border-radius: 6px; flex-wrap: wrap; }
+  .cond-row input { flex: 1; min-width: 70px; padding: 5px 8px; font-size: 13px; }
+  .cond-row button { padding: 4px 8px; font-size: 12px; }
+
+  .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+  .filter-bar input, .filter-bar select { padding: 7px 12px; font-size: 13px; }
+  .filter-bar input[type="text"] { flex: 1; min-width: 200px; }
+
+  .inv-row { display: grid; grid-template-columns: 3fr 1fr 1fr 1fr; gap: 8px; padding: 8px; border-radius: 6px; align-items: center; margin-bottom: 4px; border: 1px solid #e2e8f0; }
+  .inv-row input { padding: 6px 8px; font-size: 13px; }
+  .inv-row.header { background: #edf2f7; font-weight: 700; font-size: 12px; text-transform: uppercase; color: #4a5568; }
+
+  .fourn-card { background: white; border-radius: 10px; margin-bottom: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .fourn-card-header { background: linear-gradient(135deg, #4299e1, #3182ce); color: white; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .fourn-card-header h3 { font-size: 16px; }
+  .fourn-card-body { padding: 14px; }
+  .fourn-card-header button { background: white; color: #2b6cb0; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700; }
+  .fourn-card-header button:hover { background: #ebf4ff; }
+
+  .period-toggle { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .period-toggle button { padding: 8px 16px; border-radius: 20px; border: 2px solid #cbd5e0; background: white; cursor: pointer; font-weight: 700; font-size: 13px; color: #4a5568; }
+  .period-toggle button.active { background: #3182ce; color: white; border-color: #3182ce; }
+
+  .hidden { display: none !important; }
+
+/* ===== DESIGN v8 ===== */
+:root{--p:#2563eb;--p2:#1d4ed8;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--bg:#f1f5f9}
+*{font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif!important}
+body{background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+header{background:linear-gradient(120deg,#0f172a,#1e3a8a 60%,#2563eb);padding:12px 22px;box-shadow:0 4px 18px rgba(15,23,42,.25)}
+header h1 span.logo{background:#fbbf24;color:#78350f;border-radius:10px}
+header .actions button{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:8px}
+header .actions button:hover{background:rgba(255,255,255,.28)}
+header .actions button.logout{background:#dc2626;border-color:#dc2626}
+nav.tabs{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 2px 8px rgba(15,23,42,.05);scrollbar-width:none}
+nav.tabs button{color:var(--mut);border-bottom-width:3px}
+nav.tabs button.active{color:var(--p);background:#eff6ff;border-bottom-color:var(--p)}
+.card,.stat,.chart-box,.fourn-card{border-radius:14px;border:1px solid var(--line);box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.card h2,.modal h3{color:var(--ink);border-left:0;padding-left:0;font-size:17px}
+.stat{border-left-width:1px;position:relative;overflow:hidden}
+.stat:before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--p)}
+.stat.green:before{background:#16a34a}.stat.orange:before{background:#ea580c}.stat.red:before{background:#dc2626}.stat.purple:before{background:#7c3aed}
+.stat .value{font-size:24px;letter-spacing:-.5px}
+input,select,textarea{border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;min-height:42px}
+input:focus,select:focus,textarea:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(37,99,235,.18)}
+button.btn{border-radius:10px;min-height:38px}
+button.btn-primary{background:var(--p)}button.btn-primary:hover{background:var(--p2)}
+button.btn-success{background:#16a34a}button.btn-success:hover{background:#15803d}
+button.btn:active{transform:scale(.97)}
+th{background:#f8fafc;color:var(--mut);letter-spacing:.4px;position:sticky;top:0}
+tbody tr:nth-child(even) td{background:#fafcff}
+tr:hover td{background:#eff6ff!important}
+.card>div[id$="Table"],#rapportResult,#recettesResult,#invSaisieBox,#commandesParFournisseur,#commandesHist{overflow-x:auto}
+.info-banner{background:#eff6ff;border-radius:12px}
+.toast{border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.badge{border-radius:999px}
+#v_total{font-weight:800;color:#16a34a;background:#f0fdf4}
+@media(max-width:700px){main{padding:12px}header h1{font-size:18px}.form-row .field{min-width:46%}.form-row>.btn{width:100%}.modal .grid-2{grid-template-columns:1fr}.inv-row{grid-template-columns:2fr 1fr 1fr 1fr;font-size:12px}}
+@media print{header,nav.tabs{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     ÉCRAN DE CONNEXION
+============================================ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <div class="logo-big">🛒</div>
+    <h2>e-tsena</h2>
+    <div class="subtitle">Gestion de Buvette — Connexion</div>
+
+    <div class="field">
+      <label>Mot de passe administrateur</label>
+      <input type="password" id="loginPass" placeholder="••••••" onkeydown="if(event.key==='Enter')loginAdmin()">
+    </div>
+
+    <button class="btn-login" onclick="loginAdmin()">🔐 Se connecter (Admin)</button>
+    <button class="btn-guest" onclick="loginGuest()">👤 Continuer en tant qu'invité</button>
+
+    <div id="loginError" class="error-msg hidden">Mot de passe incorrect</div>
+    <div style="font-size:11px;color:#a0aec0;text-align:center;margin-top:16px;">
+      💡 Admin = accès complet • Invité = inventaire uniquement
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     APPLICATION
+============================================ -->
+<div id="appContainer">
+  <header>
+    <h1><span class="logo">e-tsena</span> 🛒 Gestion Buvette</h1>
+    <div class="user-info">
+      <span class="badge-user" id="userBadge">👤 Invité</span>
+    </div>
+    <div class="actions"><select id="buvSel" onchange="setBuv(this.value)" style="background:#fbbf24;color:#451a03;font-weight:700;border-radius:8px;min-height:34px;padding:4px 8px"><option>Buvette 1 (Bureau)</option><option>Buvette 2 (Grande cour)</option></select><label style="color:#fff;font-size:12px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="buvAll" onchange="setBuvAll(this.checked)" style="min-height:0;width:auto"> Voir les 2</label>
+      <button onclick="exportData()" class="admin-only">💾 Exporter</button>
+      <button onclick="exportCSV()" class="admin-only">📊 CSV</button>
+      <button onclick="document.getElementById('importFile').click()" class="admin-only">📂 Importer</button>
+      <button onclick="logout()" class="logout">🚪 Déconnexion</button>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="active admin-only" onclick="showTab(event,'dashboard')" data-tab="dashboard">📊 Tableau de bord</button>
+    <button class="admin-only" onclick="showTab(event,'articles')" data-tab="articles">📦 Articles</button>
+    <button class="admin-only" onclick="showTab(event,'ventes')" data-tab="ventes">💰 Ventes</button>
+    <button onclick="showTab(event,'inventaire')" data-tab="inventaire">📋 Inventaire</button>
+    <button class="admin-only" onclick="showTab(event,'stock')" data-tab="stock">📉 Stock</button>
+    <button class="admin-only" onclick="showTab(event,'commande')" data-tab="commande">🔔 Commandes</button>
+    <button class="admin-only" onclick="showTab(event,'fournisseurs')" data-tab="fournisseurs">🚚 Fournisseurs</button>
+    <button class="admin-only" onclick="showTab(event,'recettes')" data-tab="recettes">💵 Recettes</button>
+    <button class="admin-only" onclick="showTab(event,'encaissement')" data-tab="encaissement">🏧 Encaissement</button>
+    <button class="admin-only" onclick="showTab(event,'rapport')" data-tab="rapport">📈 Rapport</button>
+  </nav>
+
+  <main>
+
+    <!-- ================= TABLEAU DE BORD ================= -->
+    <section id="dashboard" class="tab-content active">
+      <div id="alertesDash"></div>
+      <div class="stats" id="statsDash"></div>
+      <div class="charts">
+        <div class="chart-box"><h3>CA 7 derniers jours</h3><canvas id="chartCA"></canvas></div>
+        <div class="chart-box"><h3>Top 5 produits vendus</h3><canvas id="chartTop"></canvas></div>
+        <div class="chart-box"><h3>Bénéfice brut (7 jours)</h3><canvas id="chartBenef"></canvas></div>
+        <div class="chart-box"><h3>Répartition par catégorie</h3><canvas id="chartCat"></canvas></div>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <h2>🏆 Top ventes — meilleurs jours &amp; dates</h2>
+        <div class="form-row">
+          <div class="field"><label>Du</label><input type="date" id="tv_du" onchange="renderTopVentes()"></div>
+          <div class="field"><label>Au</label><input type="date" id="tv_au" onchange="renderTopVentes()"></div>
+          <div class="field"><label>Jour de la semaine</label><select id="tv_jour" onchange="renderTopVentes()"><option value="">Tous les jours</option><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select></div>
+          <div class="field"><label>Origine</label><select id="tv_four" onchange="renderTopVentes()"><option value="">Tous les articles</option><option value="Production locale">🏠 Production locale</option><option value="Grossiste Andoharanofotsy">🏪 Grossiste Andoharanofotsy</option><option value="Pran 110">🥤 Pran 110</option><option value="Jelaxy">🧴 Jelaxy</option><option value="Hasina">📦 Hasina</option><option value="__none__">Sans fournisseur</option></select></div>
+          <div class="field"><label>Classer par</label><select id="tv_mode" onchange="renderTopVentes()"><option value="ca">Chiffre d'affaires</option><option value="qte">Quantité vendue</option></select></div>
+          <button class="btn btn-warn" onclick="['tv_du','tv_au','tv_jour','tv_four'].forEach(i=>document.getElementById(i).value='');renderTopVentes()">Réinitialiser</button>
+        </div>
+        <div id="topVentesResult"></div>
+      </div>
+    </section>
+
+    <!-- ================= ARTICLES ================= -->
+    <section id="articles" class="tab-content">
+      <div class="card">
+        <h2>➕ Ajouter un article</h2>
+        <div class="form-row">
+          <div class="field"><label>Nom</label><input id="a_nom" placeholder="Ex: Salto frite"></div>
+          <div class="field"><label>Catégorie</label>
+            <select id="a_categorie" onchange="catChange(this)"></select>
+            <datalist id="catList">
+              <option value="Snacks"><option value="Boissons"><option value="Confiserie">
+              <option value="Boulangerie"><option value="Pâtisserie"><option value="Produits laitiers">
+              <option value="Jus"><option value="Glaces"><option value="Bonbons">
+              <option value="Croquettes"><option value="Biscuits"><option value="Divers">
+            </datalist>
+          </div>
+          <div class="field"><label>Unité</label><input id="a_unite" placeholder="pièce" value="pièce"></div>
+          <div class="field"><label>Prix d'achat (Ar)</label><input id="a_pa" type="number" min="0" step="1"></div>
+          <div class="field"><label>Prix de vente (Ar)</label><input id="a_pv" type="number" min="0" step="1"></div>
+          <div class="field"><label>Stock initial</label><input id="a_stock" type="number" min="0" step="1" value="0"></div>
+          <div class="field"><label>Stock min.</label><input id="a_min" type="number" min="0" step="1" value="10"></div>
+          <div class="field"><label>Fournisseur</label>
+            <select id="a_fournisseur">
+              <option value="">-- Aucun --</option>
+              <option value="Production locale">🏠 Production locale</option>
+              <option value="Grossiste Andoharanofotsy">🏪 Grossiste Andoharanofotsy</option>
+              <option value="Pran 110">🥤 Pran 110</option>
+              <option value="Jelaxy">🧴 Jelaxy</option>
+              <option value="Hasina">📦 Hasina</option>
+            </select>
+          </div>
+          <button class="btn btn-success" onclick="addArticle()">➕ Ajouter</button>
+        </div>
+        <div class="info-banner" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <span>💡 Importez la liste prédéfinie si besoin.</span>
+          <div>
+            <button class="btn btn-purple btn-sm" onclick="importerListeArticles()">📥 Importer liste</button>
+            <button class="btn btn-danger btn-sm" onclick="viderArticles()">🗑️ Vider</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🔄 Entrée / Sortie de stock</h2>
+        <div class="form-row">
+          <div class="field"><label>Article</label><select id="es_article"></select></div>
+          <div class="field"><label>Type</label>
+            <select id="es_type">
+              <option value="entree">⬇️ Entrée (réappro.)</option>
+              <option value="sortie">⬆️ Sortie (casse, don...)</option>
+            </select>
+          </div>
+          <div class="field"><label>Quantité</label><input id="es_qte" type="number" min="1" step="1" value="1"></div>
+          <div class="field"><label>Motif</label><input id="es_motif" placeholder="Livraison, casse..."></div>
+          <button class="btn btn-primary" onclick="mouvementStock()">Valider</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📦 Liste des articles</h2>
+        <div class="filter-bar">
+          <input type="text" id="art_search" placeholder="🔍 Rechercher..." oninput="renderArticles()">
+          <select id="art_filter_cat" onchange="renderArticles()"><option value="">Toutes catégories</option></select>
+          <select id="art_filter_stock" onchange="renderArticles()">
+            <option value="">Tous les stocks</option>
+            <option value="critique">🔴 Critique (&lt;10)</option>
+            <option value="faible">🟠 Faible</option>
+            <option value="ok">🟢 OK</option>
+            <option value="zero">⚫ Rupture</option>
+          </select>
+          <span id="art_count" style="font-size:13px;color:#718096;font-weight:600"></span>
+        </div>
+        <div id="articlesTable"></div>
+      </div>
+    </section>
+
+    <!-- ================= VENTES ================= -->
+    <section id="ventes" class="tab-content">
+      <div class="card">
+        <h2>💰 Nouvelle vente</h2>
+        <div class="form-row">
+          <div class="field"><label>Date</label><input id="v_date" type="date"></div>
+          <div class="field"><label>Produit</label><select id="v_produit"></select></div>
+          <div class="field"><label>Quantité</label><input id="v_qte" type="number" min="1" step="1" value="1"></div>
+          <div class="field"><label>Prix unitaire (Ar)</label><input id="v_pu" type="number" min="0" step="1"></div>
+          <button class="btn btn-success" onclick="addVente()">💾 Enregistrer</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>🧾 Ventes enregistrées</h2>
+        <div class="form-row">
+          <div class="field"><label>Filtrer par date</label><input id="v_filtre" type="date" onchange="renderVentes()"></div>
+          <button class="btn btn-warn btn-sm" onclick="document.getElementById('v_filtre').value='';renderVentes()">Tout afficher</button>
+        </div>
+        <div id="ventesTable"></div>
+      </div>
+    </section>
+
+    <!-- ================= INVENTAIRE ================= -->
+    <section id="inventaire" class="tab-content">
+      <div class="info-banner">
+        📋 <b>Principe</b> : Le <b>stock initial</b> est calculé automatiquement à partir du stock réel (après ventes, entrées, sorties). Saisissez le <b>stock physique compté</b> : à l'enregistrement, la différence est comptée comme <b>vente au prix de vente</b> (recette), le stock est mis à jour et tout apparaît dans Ventes, Recettes, Rapport et Tableau de bord.
+        <br><br>💡 <b>Astuce</b> : Le prix unitaire est calculé depuis les conditionnements (ex : balle de 12 pcs à 15 600 Ar = 1 300 Ar/pièce).
+      </div>
+
+      <div class="card">
+        <h2>📋 Nouvel inventaire</h2>
+        <div class="form-row">
+          <div class="field"><label>Date d'inventaire</label><input id="inv_date" type="date"></div>
+          <div class="field"><label>Catégorie</label>
+            <select id="inv_filter_cat" onchange="renderInvSaisie()"><option value="">Toutes catégories</option></select>
+          </div>
+          <div class="field"><label>Rechercher</label><input id="inv_search" placeholder="Nom d'article..." oninput="renderInvSaisie()"></div>
+          <button class="btn btn-warn" onclick="resetInvSaisie()">↺ Effacer la saisie</button>
+        </div>
+        <div id="invBar" style="position:sticky;top:46px;z-index:40;background:#fff7ed;border:1px solid #fdba74;border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span id="invBarTxt" style="font-weight:600;font-size:13px"></span><button class="btn btn-success" onclick="enregistrerInventaire()">💾 Enregistrer l'inventaire</button></div>
+        <div id="invSaisieBox"></div>
+        <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap">
+          <button class="btn btn-success" onclick="enregistrerInventaire()">💾 Enregistrer l'inventaire</button>
+          <button class="btn btn-warn" onclick="imprimerInventaire()">🖨️ Imprimer la feuille</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📜 Historique des inventaires</h2>
+        <div id="invHistBox"></div>
+      </div>
+    </section>
+
+    <!-- ================= STOCK ================= -->
+    <section id="stock" class="tab-content">
+      <div class="card">
+        <h2>📉 État du stock articles</h2>
+        <div id="alertesStock"></div>
+        <div id="stockTable"></div>
+      </div>
+      <div class="card">
+        <h2>🏠 Stock ingrédients (Production locale)</h2>
+        <div id="alertesIngStock"></div>
+        <div id="stockIngTable"></div>
+      </div>
+      <div class="card">
+        <h2>📜 Historique des mouvements</h2>
+        <div id="mouvementsTable"></div>
+      </div>
+    </section>
+
+    <!-- ================= COMMANDES ================= -->
+    <section id="commande" class="tab-content">
+      <div class="info-banner">
+        💡 Commandez à tout moment. Les commandes sont <b>regroupées par fournisseur</b> avec impression individuelle.
+      </div>
+
+      <div class="card">
+        <h2>🛒 Nouvelle commande</h2>
+        <div class="form-row">
+          <div class="field"><label>Article</label><select id="cmd_article" onchange="onCmdArticleChange()"></select></div>
+          <div class="field"><label>Fournisseur</label><input id="cmd_fournisseur" list="fournList" placeholder="Auto-rempli"><datalist id="fournList"></datalist></div>
+          <div class="field"><label>Conditionnement</label><select id="cmd_cond" onchange="onCmdCondChange()"></select></div>
+          <div class="field"><label>Quantité</label><input id="cmd_qte" type="number" min="1" step="1" value="1" onchange="calcCmdTotal()"></div>
+          <div class="field"><label>Prix par cond. (Ar)</label><input id="cmd_pc" type="number" min="0" step="1" onchange="calcCmdTotal()"></div>
+          <div class="field"><label>Note</label><input id="cmd_note" placeholder="Optionnel"></div>
+          <button class="btn btn-success" onclick="addCommandeManuelle()">🔔 Commander</button>
+        </div>
+        <div style="background:#ebf4ff;padding:10px 14px;border-radius:6px;font-weight:700;color:#2c5282;">
+          Total : <span id="cmd_total">0 Ar</span>
+        </div>
+      </div>
+
+      <div id="commandeAlertes"></div>
+
+      <div class="card">
+        <h2>🔔 Suggestions (stock &lt; 10)</h2>
+        <div id="commandeTable"></div>
+      </div>
+
+      <div class="card">
+        <h2>📋 Commandes en attente (par fournisseur)</h2>
+        <button class="btn btn-warn" style="margin-bottom:10px" onclick="imprimerToutesCommandes()">🖨️ Imprimer toutes les commandes</button>
+        <div id="commandesParFournisseur"></div>
+      </div>
+
+      <div class="card">
+        <h2>📜 Historique complet</h2>
+        <div id="commandesHist"></div>
+      </div>
+    </section>
+
+    <!-- ================= FOURNISSEURS ================= -->
+    <section id="fournisseurs" class="tab-content">
+      <div class="subtabs">
+        <button class="subtab active" onclick="showSubTab(event,'sub_prod')">🏠 Production locale</button>
+        <button class="subtab" onclick="showSubTab(event,'sub_gross')">🏪 Grossiste Andoharanofotsy</button>
+        <button class="subtab" onclick="showSubTab(event,'sub_pran')">🥤 Pran 110</button>
+        <button class="subtab" onclick="showSubTab(event,'sub_jelaxy')">🧴 Jelaxy</button>
+        <button class="subtab" onclick="showSubTab(event,'sub_hasina')">📦 Hasina</button>
+        <button class="subtab" onclick="showSubTab(event,'sub_autre')">➕ Autres</button>
+      </div>
+
+      <div id="sub_prod" class="subtab-content active">
+        <div class="card">
+          <h2>🏠 Production locale — Consommation du jour</h2>
+          <div class="form-row">
+            <div class="field"><label>Date</label><input id="ing_date" type="date"></div>
+            <div class="field"><label>Ingrédient</label><select id="ing_select"></select></div>
+            <div class="field"><label>Quantité</label><input id="ing_qte" type="number" min="0.01" step="0.01" value="1"></div>
+            <div class="field"><label>Note</label><input id="ing_note"></div>
+            <button class="btn btn-success" onclick="consommerIngredient()">📝 Enregistrer</button>
+          </div>
+        </div>
+        <div class="card">
+          <h2>➕ Ajouter un ingrédient</h2>
+          <div class="form-row">
+            <div class="field"><label>Ingrédient</label><input id="p_nom"></div>
+            <div class="field"><label>Unité</label><input id="p_unite"></div>
+            <div class="field"><label>Stock initial</label><input id="p_stock" type="number" min="0" step="0.01" value="0"></div>
+            <div class="field"><label>Stock min.</label><input id="p_min" type="number" min="0" step="0.01" value="2"></div>
+            <div class="field"><label>Prix unitaire (Ar)</label><input id="p_pu" type="number" min="0" step="1"></div>
+            <div class="field"><label>Fournisseur</label><input id="p_fourn"></div>
+            <button class="btn btn-success" onclick="addIngredient()">➕ Ajouter</button>
+          </div>
+        </div>
+        <div class="card"><h2>📋 Ingrédients & stock</h2><div id="ingredientsTable"></div></div>
+        <div class="card">
+          <h2>📜 Consommations</h2>
+          <div class="form-row">
+            <div class="field"><label>Filtrer par date</label><input id="ing_filtre" type="date" onchange="renderConsoIng()"></div>
+            <button class="btn btn-warn btn-sm" onclick="document.getElementById('ing_filtre').value='';renderConsoIng()">Tout afficher</button>
+          </div>
+          <div id="consoIngTable"></div>
+        </div>
+      </div>
+
+      <div id="sub_gross" class="subtab-content">
+        <div class="card">
+          <h2>🏪 Grossiste Andoharanofotsy</h2>
+          <div class="form-row">
+            <div class="field"><label>Produit</label><input id="g_nom"></div>
+            <div class="field"><label>Unité</label><input id="g_unite"></div>
+            <div class="field"><label>Quantité</label><input id="g_qte" type="number" min="0" step="1" value="1"></div>
+            <div class="field"><label>Prix unitaire (Ar)</label><input id="g_pu" type="number" min="0" step="1"></div>
+            <div class="field"><label>Contact</label><input id="g_contact" value="Andoharanofotsy"></div>
+            <button class="btn btn-success" onclick="addGrossiste()">➕ Ajouter</button>
+          </div>
+        </div>
+        <div class="card"><h2>📋 Produits</h2><div id="grossisteTable"></div></div>
+      </div>
+
+      <div id="sub_pran" class="subtab-content">
+        <div class="card">
+          <h2>🥤 Pran 110</h2>
+          <div class="form-row">
+            <div class="field"><label>Produit</label><input id="pr_nom"></div>
+            <div class="field"><label>Unité</label><input id="pr_unite"></div>
+            <div class="field"><label>Quantité</label><input id="pr_qte" type="number" min="0" step="1" value="1"></div>
+            <div class="field"><label>Prix unitaire (Ar)</label><input id="pr_pu" type="number" min="0" step="1"></div>
+            <div class="field"><label>Contact</label><input id="pr_contact" value="Pran 110"></div>
+            <button class="btn btn-success" onclick="addPran()">➕ Ajouter</button>
+          </div>
+        </div>
+        <div class="card"><h2>📋 Produits Pran 110</h2><div id="pranTable"></div></div>
+      </div>
+
+      <div id="sub_jelaxy" class="subtab-content">
+        <div class="card">
+          <h2>🧴 Jelaxy</h2>
+          <div class="form-row">
+            <div class="field"><label>Produit</label><input id="je_nom"></div>
+            <div class="field"><label>Unité</label><input id="je_unite"></div>
+            <div class="field"><label>Quantité</label><input id="je_qte" type="number" min="0" step="1" value="1"></div>
+            <div class="field"><label>Prix unitaire (Ar)</label><input id="je_pu" type="number" min="0" step="1"></div>
+            <div class="field"><label>Contact</label><input id="je_contact" value="Jelaxy"></div>
+            <button class="btn btn-success" onclick="addJelaxy()">➕ Ajouter</button>
+          </div>
+        </div>
+        <div class="card"><h2>📋 Produits Jelaxy</h2><div id="jelaxyTable"></div></div>
+      </div>
+
+      <div id="sub_hasina" class="subtab-content">
+        <div class="card">
+          <h2>📦 Hasina</h2>
+          <div class="form-row">
+            <div class="field"><label>Produit</label><input id="ha_nom"></div>
+            <div class="field"><label>Unité</label><input id="ha_unite"></div>
+            <div class="field"><label>Quantité</label><input id="ha_qte" type="number" min="0" step="1" value="1"></div>
+            <div class="field"><label>Prix unitaire (Ar)</label><input id="ha_pu" type="number" min="0" step="1"></div>
+            <div class="field"><label>Contact</label><input id="ha_contact" value="Hasina"></div>
+            <button class="btn btn-success" onclick="addHasina()">➕ Ajouter</button>
+          </div>
+        </div>
+        <div class="card"><h2>📋 Produits Hasina</h2><div id="hasinaTable"></div></div>
+      </div>
+
+      <div id="sub_autre" class="subtab-content">
+        <div class="card">
+          <h2>➕ Fournisseur personnalisé</h2>
+          <div class="form-row">
+            <div class="field"><label>Nom</label><input id="f_nom"></div>
+            <div class="field"><label>Catégorie</label>
+              <select id="f_categorie">
+                <option value="Production locale">Production locale</option>
+                <option value="Grossiste">Grossiste</option>
+                <option value="Détail">Détail</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+            <div class="field"><label>Produit fourni</label><select id="f_produit"></select></div>
+            <div class="field"><label>Contact</label><input id="f_contact"></div>
+            <div class="field"><label>Adresse</label><input id="f_adresse"></div>
+            <div class="field"><label>Prix d'achat (Ar)</label><input id="f_pa" type="number" min="0" step="1"></div>
+            <button class="btn btn-success" onclick="addFournisseur()">Ajouter</button>
+          </div>
+        </div>
+        <div class="card"><h2>📋 Liste</h2><div id="fournisseursTable"></div></div>
+      </div>
+    </section>
+
+    <!-- ================= RECETTES ================= -->
+    <section id="recettes" class="tab-content">
+      <div class="card">
+        <h2>💵 Recettes</h2>
+        <div class="period-toggle">
+          <button class="active" onclick="setRecettePeriode(event,'jour')">📅 Journalière</button>
+          <button onclick="setRecettePeriode(event,'semaine')">📆 Hebdomadaire</button>
+          <button onclick="setRecettePeriode(event,'mois')">🗓️ Mensuelle</button>
+        </div>
+        <div id="recettesResult"></div>
+      </div>
+      <div class="card">
+        <h2>🖨️ Impression</h2>
+        <button class="btn btn-warn" onclick="imprimerRecettes()">🖨️ Imprimer la recette affichée</button>
+      </div>
+    </section>
+
+    <!-- ================= RAPPORT ================= -->
+    <section id="rapport" class="tab-content">
+      <div class="card">
+        <h2>📈 Rapport (jour ou plage de dates)</h2>
+        <div class="form-row">
+          <div class="field"><label>Du</label><input id="r_date" type="date"></div><div class="field"><label>Au (optionnel)</label><input id="r_date2" type="date"></div>
+          <button class="btn btn-primary" onclick="genererRapport()">🔍 Générer</button>
+          <button class="btn btn-warn" onclick="imprimerRapport()">🖨️ Imprimer</button>
+        </div>
+      </div>
+      <div id="rapportResult"></div>
+      <div class="card">
+        <h2>📦 Gestion de stock — totalité et par buvette</h2>
+        <div class="form-row">
+          <div class="field"><label>Affichage</label><select id="sr_buv" onchange="renderStockRapport()"><option value="">Totalité (les 2 buvettes)</option><option>Buvette 1 (Bureau)</option><option>Buvette 2 (Grande cour)</option></select></div>
+          <div class="field"><label>Mouvements du</label><input type="date" id="sr_du" onchange="renderStockRapport()"></div>
+          <div class="field"><label>Au</label><input type="date" id="sr_au" onchange="renderStockRapport()"></div>
+          <button class="btn btn-warn" onclick="openPrintWindow('<h1>📦 Gestion de stock — '+(byId('sr_buv').value||'Totalité')+'</h1>'+byId('stockRapport').innerHTML,'Stock')">🖨️ Imprimer</button>
+        </div>
+        <div id="stockRapport" style="overflow-x:auto"></div>
+      </div>
+      <div class="card" style="border:2px solid #fecaca">
+        <h2>⚠️ Zone de réinitialisation (admin)</h2>
+        <div class="info-banner">Les <b>articles sont conservés</b>. Une sauvegarde JSON est téléchargée avant, puis une double confirmation est demandée.</div>
+        <div class="form-row">
+          <div class="field"><label>Buvette concernée</label><select id="rs_buv"><option value="">Les 2 buvettes</option><option>Buvette 1 (Bureau)</option><option>Buvette 2 (Grande cour)</option></select></div>
+          <button class="btn btn-danger" onclick="resetData('ventes')">🗑️ Ventes + inventaires + encaissements</button>
+          <button class="btn btn-danger" onclick="resetData('stock')">🗑️ Stocks à 0</button>
+          <button class="btn btn-danger" onclick="resetData('mouvements')">🗑️ Mouvements</button>
+          <button class="btn btn-danger" onclick="resetData('commandes')">🗑️ Commandes</button>
+          <button class="btn btn-danger" onclick="resetData('tout')">☢️ Tout (sauf articles)</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="encaissement" class="tab-content">
+      <div class="card">
+        <h2>🏧 Encaissement — <span id="enc_buv"></span></h2>
+        <div class="info-banner">Jusqu'à <b>4 encaissements par jour</b> et par buvette. L'écart compare l'argent compté aux ventes des articles du jour.</div>
+        <div class="form-row">
+          <div class="field"><label>Date</label><input type="date" id="enc_date" onchange="renderEnc()"></div>
+          <div class="field"><label>Passage n°</label><select id="enc_num"></select></div>
+          <div class="field"><label>Note</label><input id="enc_note" placeholder="Optionnel"></div>
+        </div>
+        <div id="encBillets"></div>
+        <div class="info-banner" style="font-size:17px;margin-top:12px">💰 Total compté : <b id="enc_total">0 Ar</b> &nbsp; <button class="btn btn-success" onclick="saveEnc()">💾 Enregistrer l'encaissement</button></div>
+        <div id="encJour" style="overflow-x:auto;margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <h2>📊 Recette perçue vs articles vendus</h2>
+        <div class="form-row">
+          <div class="field"><label>Du</label><input type="date" id="ec_du" onchange="renderEnc()"></div>
+          <div class="field"><label>Au</label><input type="date" id="ec_au" onchange="renderEnc()"></div>
+          <button class="btn btn-warn" onclick="openPrintWindow('<h1>🛒 Encaissements vs ventes</h1>'+byId('encCompare').innerHTML,'Encaissements')">🖨️ Imprimer</button>
+        </div>
+        <div id="encCompare" style="overflow-x:auto"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="modal-overlay" id="modalCmd"><div class="modal">
+  <h3>✏️ Modifier la commande</h3>
+  <div class="field"><label>Article</label><input id="ce_art" readonly></div>
+  <div class="field"><label>Fournisseur</label><input id="ce_four" list="fournList"></div>
+  <div class="grid-2"><div class="field"><label>Quantité (conditionnements)</label><input id="ce_qte" type="number" min="1"></div>
+  <div class="field"><label>Prix par conditionnement (Ar)</label><input id="ce_pc" type="number" min="0"></div></div>
+  <div class="field"><label>Note</label><input id="ce_note"></div>
+  <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-success" onclick="saveCmdEdit()">💾 Enregistrer</button><button class="btn btn-warn" onclick="closeModal('modalCmd')">Annuler</button></div>
+</div></div>
+<!-- MODAL ÉDITION ARTICLE -->
+<div class="modal-overlay" id="modalEdit">
+  <div class="modal">
+    <h3>✏️ Modifier l'article</h3>
+    <div class="field"><label>Nom</label><input id="m_nom"></div>
+    <div class="grid-2">
+      <div class="field"><label>Catégorie</label><select id="m_categorie" onchange="catChange(this)"></select></div>
+      <div class="field"><label>Unité</label><input id="m_unite"></div>
+      <div class="field"><label>Prix d'achat (Ar)</label><input id="m_pa" type="number" min="0" step="1"></div>
+      <div class="field"><label>Prix de vente (Ar)</label><input id="m_pv" type="number" min="0" step="1"></div>
+      <div class="field"><label>Stock actuel</label><input id="m_stock" type="number" min="0" step="1"></div>
+      <div class="field"><label>Stock minimum</label><input id="m_min" type="number" min="0" step="1"></div>
+    </div>
+    <div class="field"><label>Fournisseur</label>
+      <select id="m_fournisseur">
+        <option value="">-- Aucun --</option>
+        <option value="Production locale">🏠 Production locale</option>
+        <option value="Grossiste Andoharanofotsy">🏪 Grossiste Andoharanofotsy</option>
+        <option value="Pran 110">🥤 Pran 110</option>
+        <option value="Jelaxy">🧴 Jelaxy</option>
+        <option value="Hasina">📦 Hasina</option>
+      </select>
+    </div>
+    <div class="actions">
+      <button class="btn btn-danger" onclick="closeModal('modalEdit')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEditArticle()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONDITIONNEMENTS -->
+<div class="modal-overlay" id="modalCond">
+  <div class="modal">
+    <h3>📦 Conditionnements personnalisés</h3>
+    <p style="font-size:13px;color:#718096;margin-bottom:12px;">
+      Ex : Salto frite → <b>Balle de 12 pièces à 15 600 Ar</b> → prix unitaire calculé automatiquement : <b>1 300 Ar/pièce</b>
+    </p>
+    <div id="condList"></div>
+    <div style="display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+      <input id="new_cond_nom" placeholder="Nom (ex: Balle)" list="condList2" style="flex:1;min-width:110px">
+      <datalist id="condList2">
+        <option value="Balle"><option value="Pack"><option value="Carton">
+        <option value="Sachet"><option value="Caisse"><option value="Palette">
+        <option value="Boîte"><option value="Lot">
+      </datalist>
+      <input id="new_cond_qte" type="number" min="1" placeholder="Nb pièces" style="width:100px">
+      <input id="new_cond_prix" type="number" min="0" placeholder="Prix total (Ar)" style="width:130px">
+      <button class="btn btn-purple btn-sm" onclick="addConditionnement()">➕ Ajouter</button>
+    </div>
+    <div style="background:#ebf4ff;padding:10px;border-radius:6px;font-size:12px;color:#2c5282;margin-top:10px;">
+      💡 <b>Astuce</b> : Saisissez le prix TOTAL du conditionnement (ex : 15 600 Ar pour une balle de 12). Le prix unitaire est calculé automatiquement. Le <b>prix d'achat unitaire de l'article est mis à jour automatiquement</b> (le bouton 💾 PA permet de reprendre un autre conditionnement).
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" onclick="closeModal('modalCond')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL COMMANDE RAPIDE -->
+<div class="modal-overlay" id="modalCmdRapide">
+  <div class="modal">
+    <h3>🔔 Commander un article</h3>
+    <div class="field"><label>Article</label><input id="cr_article" readonly></div>
+    <div class="field"><label>Fournisseur</label><input id="cr_fournisseur" readonly></div>
+    <div class="field"><label>Conditionnement</label><select id="cr_cond" onchange="onCrCondChange()"></select></div>
+    <div class="grid-2">
+      <div class="field"><label>Quantité</label><input id="cr_qte" type="number" min="1" value="1" onchange="calcCrTotal()"></div>
+      <div class="field"><label>Prix par conditionnement (Ar)</label><input id="cr_pc" type="number" min="0" step="1" onchange="calcCrTotal()"></div>
+    </div>
+    <div style="background:#ebf4ff;padding:10px;border-radius:6px;font-weight:700;color:#2c5282;">
+      Total : <span id="cr_total">0 Ar</span>
+    </div>
+    <div class="field" style="margin-top:10px"><label>Note</label><input id="cr_note"></div>
+    <div class="actions">
+      <button class="btn btn-danger" onclick="closeModal('modalCmdRapide')">Annuler</button>
+      <button class="btn btn-success" onclick="validerCmdRapide()">✅ Commander</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   CONFIG AUTHENTIFICATION
+========================================================= */
+const ADMIN_PASSWORD = 'admin';
+let currentUser = null; // 'admin' ou 'guest'
+
+/* =========================================================
+   DONNÉES — v7
+========================================================= */
+const KEY = 'etsena_data_v7';
+let db = {
+  articles: [], ventes: [], fournisseurs: [], ingredients: [],
+  consoIng: [], grossiste: [], pran: [], jelaxy: [], hasina: [],
+  mouvements: [], commandes: [], inventaires: [], encaissements: []
+};
+
+function load() {
+  const raw = localStorage.getItem(KEY);
+  if (raw) { try { db = JSON.parse(raw); } catch(e){} }
+  ['articles','ventes','fournisseurs','ingredients','consoIng','grossiste','pran','jelaxy','hasina','mouvements','commandes','inventaires','encaissements']
+    .forEach(k => { if (!db[k]) db[k] = []; });
+  db.ingredients.forEach(i => {
+    if (i.stock === undefined) i.stock = 0;
+    if (i.min === undefined) i.min = 2;
+  });
+  db.articles.forEach(a => {
+    if (a.conditionnements === undefined) a.conditionnements = [];
+    if (a.categorie === undefined) a.categorie = '';
+  });
+}
+function save() { localStorage.setItem(KEY, JSON.stringify(db)); }
+
+/* =========================================================
+   UTILITAIRES
+========================================================= */
+const uid = () => Date.now() + Math.floor(Math.random()*9999);
+const isoLocal = d => new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+const today = () => isoLocal(new Date());
+const fmt = n => (Number(n)||0).toLocaleString('fr-FR');
+const getArticle = id => db.articles.find(a => a.id == id);
+const getIngredient = id => db.ingredients.find(i => i.id == id);
+const coutVente = (v, a) => (a && a.fournisseur === 'Production locale') ? 0 : (v.pa !== undefined ? v.pa : (a ? a.pa : 0));
+const cmdAttente = c => c.statut === 'attente';
+function syncPA(a, c) {
+  if (!c || !(c.qte > 0) || !(c.prix > 0)) return;
+  a.pa = Math.round(c.prix / c.qte);
+  if (a.pv > 0 && a.pv < a.pa) toast(`⚠️ PA = ${fmt(a.pa)} Ar/pc mais PV = ${fmt(a.pv)} Ar : corrigez le prix de vente`, 'err');
+  else toast(`Prix d'achat unitaire mis à jour : ${fmt(a.pa)} Ar/pièce ✓`, 'ok');
+}
+function receptionnerCommande(id) {
+  const c = db.commandes.find(x => x.id == id);
+  if (!c || c.statut !== 'attente') return;
+  const d = today();
+  if (c.type === 'ingredient') {
+    const i = getIngredient(c.articleId);
+    if (!i) return toast('Ingrédient introuvable', 'err');
+    i.stock += c.qte; if (c.prixCond > 0) i.pu = c.prixCond;
+  } else {
+    const a = getArticle(c.articleId);
+    if (!a) return toast('Article introuvable', 'err');
+    const pieces = c.qte * (c.qteParCond || 1);
+    a.stock += pieces;
+    if (c.prixCond > 0) {
+      const cd = a.conditionnements.find(x => x.nom === c.conditionnement && x.qte === c.qteParCond);
+      if (cd) cd.prix = c.prixCond;
+      a.pa = Math.round(c.prixCond / (c.qteParCond || 1));
+    }
+    db.mouvements.push({ id: uid(), date: d, articleId: a.id, articleNom: a.nom, type: 'entree', qte: pieces, motif: `Réception commande (${c.qte} ${c.conditionnement})` });
+  }
+  c.statut = 'recue'; c.dateReception = d;
+  save(); renderAll();
+  toast('Commande reçue — stock et prix d\'achat mis à jour ✓', 'ok');
+}
+function annulerReception(id) {
+  const c = db.commandes.find(x => x.id == id);
+  if (!c || c.statut !== 'recue' || !c.dateReception) return;
+  if (c.type === 'ingredient') { const i = getIngredient(c.articleId); if (i) i.stock = Math.max(0, i.stock - c.qte); }
+  else {
+    const a = getArticle(c.articleId);
+    if (a) {
+      const p = c.qte * (c.qteParCond || 1);
+      a.stock = Math.max(0, a.stock - p);
+      db.mouvements.push({ id: uid(), date: today(), articleId: a.id, articleNom: a.nom, type: 'sortie', qte: p, motif: 'Annulation réception' });
+    }
+  }
+}
+const grossisteDel = id => grossisteH.del(id), pranDel = id => pranH.del(id),
+      jelaxyDel = id => jelaxyH.del(id), hasinaDel = id => hasinaH.del(id);
+
+
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = 'toast', 2800);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('input, select') && e.target.id.indexOf('inv_') !== 0 && !e.target.closest('#invSaisieBox')) {
+    const card = e.target.closest('.card, .modal');
+    if (!card) return;
+    const btn = card.querySelector('button.btn-success, button.btn-primary');
+    if (btn) { e.preventDefault(); btn.click(); }
+  }
+});
+
+/* =========================================================
+   AUTHENTIFICATION
+========================================================= */
+function loginAdmin() {
+  const pass = document.getElementById('loginPass').value;
+  if (pass === ADMIN_PASSWORD) {
+    currentUser = 'admin';
+    enterApp();
+  } else {
+    document.getElementById('loginError').classList.remove('hidden');
+    setTimeout(() => document.getElementById('loginError').classList.add('hidden'), 3000);
+  }
+}
+
+function loginGuest() {
+  currentUser = 'guest';
+  enterApp();
+}
+
+function enterApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appContainer').style.display = 'block';
+  document.getElementById('userBadge').textContent = currentUser === 'admin' ? '🔑 Admin' : '👤 Invité';
+
+  // Masquer les onglets admin si invité
+  if (currentUser === 'guest') {
+    document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+    // Aller directement à l'inventaire
+    document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById('inventaire').classList.add('active');
+    document.querySelector('nav.tabs button[data-tab="inventaire"]').classList.add('active');
+    document.getElementById('inv_date').value = today();
+    populateCatFilter(); renderInvSaisie();
+    renderInvHist();
+  } else {
+    // Admin : tout visible
+    document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+    document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById('dashboard').classList.add('active');
+    document.querySelector('nav.tabs button[data-tab="dashboard"]').classList.add('active');
+    renderAll();
+  }
+}
+
+function logout() {
+  if (!confirm('Se déconnecter ?')) return;
+  currentUser = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appContainer').style.display = 'none';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').classList.add('hidden');
+}
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+function showTab(e, id) {
+  document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  e.target.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'stock') { renderStock(); renderStockIng(); renderMouvements(); }
+  if (id === 'commande') renderCommande();
+  if (id === 'inventaire') { document.getElementById('inv_date').value = today(); renderInvSaisie(); renderInvHist(); }
+  if (id === 'recettes') renderRecettes();
+  if (id === 'rapport') { document.getElementById('r_date').value = today(); genererRapport(); }
+}
+
+function showSubTab(e, id) {
+  document.querySelectorAll('.subtab-content').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.subtab').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  e.target.classList.add('active');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function goTab(id) {
+  document.querySelectorAll('.tab-content').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const btn = document.querySelector(`nav.tabs button[data-tab="${id}"]`);
+  if (btn) btn.classList.add('active');
+  if (id === 'commande') renderCommande();
+  if (id === 'inventaire') { document.getElementById('inv_date').value = today(); renderInvSaisie(); renderInvHist(); }
+  if (id === 'recettes') renderRecettes();
+}
+
+/* =========================================================
+   IMPORT LISTE PRÉDÉFINIE
+========================================================= */
+const LISTE_ARTICLES_PREDEFINIS = [
+  "salto frite","salto 3d","salto chips","super ball","tsakotsako",
+  "tortilla","petit pizza","french frite","milay GM","milayMM",
+  "milay PM","le fruit","candy up","ice tea","tampico",
+  "tampico sachet","Yaourt boire","jus","jus star","nadoo",
+  "Fruit fun","Tikek GM","Tikek PM","Krik krak","Mashmallow",
+  "Gaz","G chococ","Fresh","Atody GM","Solomaso",
+  "Volnic","BB Voanjo","tamarin","Ice pop drink","ice lolly",
+  "Kiddofun","Jelly fromage","minico","tetine","bb maso",
+  "BB vampire","Ccpiegon 100","ccpiegon500","BB 400","Jelaxy",
+  "volume","porleo","mentoplus","potata gm","potatapm",
+  "frego gm","frego pm","gouty cookies","biscolait","bisconoire",
+  "Crocklait","crock voanjo","dream","busfle pm","Busfle gm",
+  "lips","Big beans","Cola candy","Toffee jelly","Choco cup",
+  "choco ball","BB Voiture","briquet","fantastic","nougat",
+  "ABC","Pencil Gum","Gouty lait GM","Gouty lait PM",
+  "Gouty beurre GM","gouty beurrePM","Tuc mini","Tuc pocket",
+  "Snack","Petit sable citron","g madelaine","Croquette",
+  "Macarron","Jelly pizza","chips1000AR","Chips 500AR",
+  "Marie","Turbo","Salto GM","Salto PM","G sable GM",
+  "G sable PM","Cacahuete","Vomanga","Mouchoire","Kookies",
+  "Yaort pipette","milk","Sucette 500AR","Pain choco",
+  "brioche suisse","feuillette","pain au lait","pate a choux",
+  "toast","donuts","pizza","nem","sambos","vantan","tarte"
+];
+
+function importerListeArticles() {
+  const existants = db.articles.map(a => a.nom.toLowerCase());
+  let ajoutes = 0;
+  LISTE_ARTICLES_PREDEFINIS.forEach(nom => {
+    if (!existants.includes(nom.toLowerCase())) {
+      db.articles.push({
+        id: uid(), nom, categorie: '', unite: 'pièce',
+        pa: 0, pv: 0, stock: 0, min: 10,
+        fournisseur: '', conditionnements: []
+      });
+      ajoutes++;
+    }
+  });
+  save(); renderAll();
+  toast(`${ajoutes} article(s) importé(s) ✓`, 'ok');
+}
+
+function viderArticles() {
+  if (!confirm('⚠️ Supprimer TOUS les articles ?')) return;
+  if (!confirm('Vraiment sûr ?')) return;
+  db.articles = []; save(); renderAll();
+  toast('Articles supprimés', 'ok');
+}
+
+/* =========================================================
+   ARTICLES
+========================================================= */
+function addArticle() {
+  const nom = document.getElementById('a_nom').value.trim();
+  const categorie = document.getElementById('a_categorie').value.trim();
+  const unite = document.getElementById('a_unite').value.trim() || 'pièce';
+  const pa = Number(document.getElementById('a_pa').value) || 0;
+  const pv = Number(document.getElementById('a_pv').value) || 0;
+  const stock = Number(document.getElementById('a_stock').value) || 0;
+  const min = Number(document.getElementById('a_min').value) || 10;
+  const fournisseur = document.getElementById('a_fournisseur').value;
+  if (!nom) return toast('Le nom est obligatoire', 'err');
+  if (pv < pa) return toast("Prix de vente < prix d'achat !", 'err');
+  db.articles.push({ id: uid(), nom, categorie, unite, pa, pv, stock, min, fournisseur, conditionnements: [] });
+  save();
+  ['a_nom','a_categorie','a_pa','a_pv','a_stock'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('a_unite').value = 'pièce';
+  document.getElementById('a_min').value = 10;
+  document.getElementById('a_fournisseur').value = '';
+  toast('Article ajouté ✓', 'ok');
+  renderAll();
+}
+
+function deleteArticle(id) {
+  if (!confirm('Supprimer cet article ?')) return;
+  db.articles = db.articles.filter(a => a.id != id);
+  save(); renderAll();
+}
+
+function openEditArticle(id) {
+  const a = getArticle(id);
+  if (!a) return;
+  document.getElementById('m_nom').value = a.nom;
+  document.getElementById('m_categorie').value = a.categorie || '';
+  document.getElementById('m_unite').value = a.unite;
+  document.getElementById('m_pa').value = a.pa;
+  document.getElementById('m_pv').value = a.pv;
+  document.getElementById('m_stock').value = a.stock;
+  document.getElementById('m_min').value = a.min;
+  document.getElementById('m_fournisseur').value = a.fournisseur || '';
+  document.getElementById('modalEdit').dataset.id = id;
+  document.getElementById('modalEdit').classList.add('show');
+}
+
+function saveEditArticle() {
+  const id = document.getElementById('modalEdit').dataset.id;
+  const a = getArticle(id);
+  if (!a) return;
+  const pa = Number(document.getElementById('m_pa').value) || 0;
+  const pv = Number(document.getElementById('m_pv').value) || 0;
+  if (pv < pa) return toast("Prix de vente < prix d'achat !", 'err');
+  a.nom = document.getElementById('m_nom').value.trim();
+  a.categorie = document.getElementById('m_categorie').value.trim();
+  a.unite = document.getElementById('m_unite').value.trim();
+  a.pa = pa; a.pv = pv;
+  const ns = Number(document.getElementById('m_stock').value) || 0;
+  if (ns !== a.stock) db.mouvements.push({ id: uid(), date: today(), articleId: a.id, articleNom: a.nom, type: ns > a.stock ? 'entree' : 'sortie', qte: Math.abs(ns - a.stock), motif: 'Correction manuelle' });
+  a.stock = ns;
+  a.min = Number(document.getElementById('m_min').value) || 10;
+  a.fournisseur = document.getElementById('m_fournisseur').value;
+  save(); closeModal('modalEdit');
+  toast('Article modifié ✓', 'ok');
+  renderAll();
+}
+
+/* =========================================================
+   CONDITIONNEMENTS (avec calcul auto prix unitaire)
+========================================================= */
+function openCondModal(articleId) {
+  const a = getArticle(articleId);
+  if (!a) return;
+  document.getElementById('modalCond').dataset.articleId = articleId;
+  renderCondList();
+  document.getElementById('modalCond').classList.add('show');
+}
+
+function renderCondList() {
+  const id = document.getElementById('modalCond').dataset.articleId;
+  const a = getArticle(id);
+  if (!a) return;
+  const box = document.getElementById('condList');
+  if (!a.conditionnements.length) {
+    box.innerHTML = '<div class="empty" style="padding:10px">Aucun conditionnement défini.</div>';
+    return;
+  }
+  box.innerHTML = a.conditionnements.map((c, i) => {
+    const pu = c.qte > 0 ? (c.prix / c.qte) : 0;
+    return `
+      <div class="cond-row">
+        <span style="font-weight:700;min-width:90px">${c.nom}</span>
+        <input type="number" value="${c.qte}" min="1" step="1" onchange="updateCond(${i},'qte',this.value)" placeholder="Nb pcs">
+        <span style="font-size:12px;color:#718096">pièces</span>
+        <input type="number" value="${c.prix}" min="0" step="1" onchange="updateCond(${i},'prix',this.value)" placeholder="Prix total">
+        <span style="font-size:12px;color:#718096">Ar total</span>
+        <span style="background:#c6f6d5;color:#22543d;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:700;white-space:nowrap">= ${fmt(Math.round(pu))} Ar/pc</span>
+        <button class="btn btn-primary btn-xs" onclick="appliquerPA(${i})" title="Utiliser comme prix d'achat unitaire">💾 PA</button>
+        <button class="btn btn-danger btn-xs" onclick="delCond(${i})">✕</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function appliquerPA(i) {
+  const id = document.getElementById('modalCond').dataset.articleId;
+  const a = getArticle(id);
+  if (!a) return;
+  const c = a.conditionnements[i];
+  if (!c) return;
+  const pu = c.qte > 0 ? Math.round(c.prix / c.qte) : 0;
+  if (pu <= 0) return toast('Prix invalide', 'err');
+  a.pa = pu;
+  save();
+  toast(`Prix d'achat mis à jour : ${fmt(pu)} Ar/pièce ✓`, 'ok');
+  renderAll();
+}
+
+function addConditionnement() {
+  const id = document.getElementById('modalCond').dataset.articleId;
+  const a = getArticle(id);
+  if (!a) return;
+  const nom = document.getElementById('new_cond_nom').value.trim();
+  const qte = Number(document.getElementById('new_cond_qte').value) || 0;
+  const prix = Number(document.getElementById('new_cond_prix').value) || 0;
+  if (!nom) return toast('Nom du conditionnement requis', 'err');
+  if (qte <= 0) return toast("Nombre de pièces invalide", 'err');
+  a.conditionnements.push({ nom, qte, prix });
+  syncPA(a, a.conditionnements[a.conditionnements.length - 1]);
+  save();
+  document.getElementById('new_cond_nom').value = '';
+  document.getElementById('new_cond_qte').value = '';
+  document.getElementById('new_cond_prix').value = '';
+  renderCondList();
+  toast('Conditionnement ajouté ✓', 'ok');
+  renderAll();
+}
+
+function updateCond(i, field, val) {
+  const id = document.getElementById('modalCond').dataset.articleId;
+  const a = getArticle(id);
+  a.conditionnements[i][field] = Number(val) || 0;
+  syncPA(a, a.conditionnements[i]);
+  save();
+  renderCondList(); renderAll();
+}
+
+function delCond(i) {
+  const id = document.getElementById('modalCond').dataset.articleId;
+  const a = getArticle(id);
+  a.conditionnements.splice(i, 1);
+  save(); renderCondList(); renderAll();
+}
+
+/* =========================================================
+   RENDER ARTICLES
+========================================================= */
+function renderArticles() {
+  const box = document.getElementById('articlesTable');
+  if (!db.articles.length) {
+    box.innerHTML = '<div class="empty">Aucun article. Importez la liste prédéfinie pour démarrer.</div>';
+    document.getElementById('art_count').textContent = '';
+    return;
+  }
+
+  const search = (document.getElementById('art_search').value || '').toLowerCase();
+  const catFilter = document.getElementById('art_filter_cat').value;
+  const stockFilter = document.getElementById('art_filter_stock').value;
+
+  let list = db.articles.filter(a => {
+    if (search && !a.nom.toLowerCase().includes(search)) return false;
+    if (catFilter && a.categorie !== catFilter) return false;
+    if (stockFilter === 'critique' && !(a.stock < 10 && a.stock > 0)) return false;
+    if (stockFilter === 'faible' && !(a.stock >= 10 && a.stock < a.min)) return false;
+    if (stockFilter === 'ok' && !(a.stock >= a.min)) return false;
+    if (stockFilter === 'zero' && a.stock !== 0) return false;
+    return true;
+  });
+
+  document.getElementById('art_count').textContent = `${list.length} / ${db.articles.length}`;
+  if (!list.length) { box.innerHTML = '<div class="empty">Aucun article correspondant.</div>'; return; }
+
+  let html = `<table><thead><tr>
+    <th>Nom</th><th>Catégorie</th><th>Unité</th><th>PA</th><th>PV</th><th>Marge</th>
+    <th>Stock</th><th>Min</th><th>Fourn.</th>
+    <th>📦 Conditionnements</th><th>État</th><th>Actions</th>
+  </tr></thead><tbody>`;
+  list.forEach(a => {
+    const etat = a.stock <= 0 ? '<span class="badge badge-danger">Rupture</span>'
+              : a.stock < 10 ? '<span class="badge badge-danger">Critique</span>'
+              : a.stock < a.min ? '<span class="badge badge-warn">Faible</span>'
+              : '<span class="badge badge-ok">OK</span>';
+    const cat = a.categorie ? `<span class="badge badge-cat">${a.categorie}</span>` : '<span style="color:#cbd5e0;font-size:12px">—</span>';
+    const conds = a.conditionnements.length
+      ? a.conditionnements.map(c => {
+          const pu = c.qte > 0 ? Math.round(c.prix / c.qte) : 0;
+          return `<span class="cond-tag">${c.nom}: ${c.qte}p × ${fmt(c.prix)}Ar (=${fmt(pu)}/pc)</span>`;
+        }).join('')
+      : '<span style="color:#a0aec0;font-size:12px">— 📦 —</span>';
+    html += `<tr>
+      <td><b>${a.nom}</b></td>
+      <td>${cat}</td>
+      <td>${a.unite}</td>
+      <td>${fmt(a.pa)} Ar${a.conditionnements.length ? ' <span title="Calculé depuis le conditionnement">📦</span>' : ''}</td>
+      <td>${fmt(a.pv)} Ar</td>
+      <td style="font-weight:700;color:${a.pv - a.pa < 0 ? '#dc2626' : '#16a34a'}">${fmt(a.pv - a.pa)} Ar</td>
+      <td>${a.stock}</td>
+      <td>${a.min}</td>
+      <td>${a.fournisseur || '—'}</td>
+      <td style="max-width:240px">${conds}</td>
+      <td>${etat}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-primary btn-sm" onclick="openEditArticle(${a.id})" title="Modifier">✏️</button>
+        <button class="btn btn-purple btn-sm" onclick="openCondModal(${a.id})" title="Conditionnements">📦</button>
+        <button class="btn btn-warn btn-sm" onclick="openCmdRapide(${a.id})" title="Commander">🔔</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteArticle(${a.id})" title="Supprimer">✕</button>
+      </td>
+    </tr>`;
+  });
+  box.innerHTML = html + '</tbody></table>';
+}
+
+
+const CATS_DEFAUT = ['Snacks','Boissons','Confiserie','Boulangerie','Pâtisserie','Produits laitiers','Jus','Glaces','Bonbons','Croquettes','Biscuits','Divers'];
+const allCats = () => [...new Set([...CATS_DEFAUT, ...(db.categories || []), ...db.articles.map(a => a.categorie).filter(Boolean)])].sort((x, y) => x.localeCompare(y, 'fr'));
+function fillCatSelects() {
+  ['a_categorie', 'm_categorie'].forEach(id => {
+    const el = document.getElementById(id), cur = el.value;
+    el.innerHTML = '<option value="">— Sans catégorie —</option>' + allCats().map(c => `<option>${c}</option>`).join('') + '<option value="__new__">➕ Nouvelle catégorie (à définir)…</option>';
+    el.value = cur && cur !== '__new__' ? cur : '';
+  });
+}
+function catChange(el) {
+  if (el.value !== '__new__') return;
+  const id = el.id, n = (prompt('Nom de la nouvelle catégorie :') || '').trim();
+  if (n) { db.categories = db.categories || []; if (!db.categories.includes(n)) db.categories.push(n); save(); }
+  fillCatSelects(); document.getElementById(id).value = n || '';
+}
+function populateCatFilter() {
+  fillCatSelects();
+  const sel = document.getElementById('art_filter_cat');
+  const selInv = document.getElementById('inv_filter_cat');
+  const cats = [...new Set(db.articles.map(a => a.categorie).filter(c => c))].sort();
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Toutes catégories</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (cats.includes(cur)) sel.value = cur;
+  const curInv = selInv.value;
+  selInv.innerHTML = '<option value="">Toutes catégories</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  if (cats.includes(curInv)) selInv.value = curInv;
+}
+
+/* =========================================================
+   ENTRÉE / SORTIE
+========================================================= */
+function mouvementStock() {
+  const articleId = document.getElementById('es_article').value;
+  const type = document.getElementById('es_type').value;
+  const qte = Number(document.getElementById('es_qte').value) || 0;
+  const motif = document.getElementById('es_motif').value.trim();
+  if (!articleId) return toast('Sélectionnez un article', 'err');
+  if (qte <= 0) return toast('Quantité invalide', 'err');
+  const a = getArticle(articleId);
+  if (!a) return;
+  if (type === 'entree') a.stock += qte;
+  else {
+    if (qte > a.stock) return toast(`Stock insuffisant (${a.stock})`, 'err');
+    a.stock -= qte;
+  }
+  db.mouvements.push({
+    id: uid(), date: today(), articleId: a.id, articleNom: a.nom,
+    type, qte, motif: motif || (type === 'entree' ? 'Réapprovisionnement' : 'Sortie')
+  });
+  save();
+  document.getElementById('es_qte').value = 1;
+  document.getElementById('es_motif').value = '';
+  toast(type === 'entree' ? `Entrée +${qte} ✓` : `Sortie -${qte} ✓`, 'ok');
+  renderAll();
+}
+
+function renderMouvements() {
+  const box = document.getElementById('mouvementsTable');
+  if (!db.mouvements.length) { box.innerHTML = '<div class="empty">Aucun mouvement.</div>'; return; }
+  const mvs = [...db.mouvements].sort((a,b) => b.id - a.id).slice(0, 100);
+  let html = `<table><thead><tr>
+    <th>Date</th><th>Article</th><th>Type</th><th>Qté</th><th>Motif</th><th></th>
+  </tr></thead><tbody>`;
+  mvs.forEach(m => {
+    const badge = m.type === 'entree'
+      ? '<span class="badge badge-ok">⬇️ Entrée</span>'
+      : '<span class="badge badge-warn">⬆️ Sortie</span>';
+    html += `<tr>
+      <td>${m.date}</td><td><b>${m.articleNom}</b></td><td>${badge}</td>
+      <td>${m.type === 'entree' ? '+' : '-'}${m.qte}</td><td>${m.motif}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteMouvement(${m.id})">✕</button></td>
+    </tr>`;
+  });
+  box.innerHTML = html + '</tbody></table>';
+}
+
+function deleteMouvement(id) {
+  const m = db.mouvements.find(x => x.id == id);
+  if (!m) return;
+  if (!confirm('Annuler ce mouvement ?')) return;
+  const a = getArticle(m.articleId);
+  if (a) { if (m.type === 'entree') a.stock -= m.qte; else a.stock += m.qte; }
+  db.mouvements = db.mouvements.filter(x => x.id != id);
+  save(); renderAll();
+}
+
+/* =========================================================
+   VENTES
+========================================================= */
+function addVente() {
+  const date = document.getElementById('v_date').value || today();
+  const articleId = document.getElementById('v_produit').value;
+  const qte = Number(document.getElementById('v_qte').value) || 0;
+  const pu = Number(document.getElementById('v_pu').value) || 0;
+  if (!articleId) return toast('Sélectionnez un produit', 'err');
+  if (qte <= 0) return toast('Quantité invalide', 'err');
+  const art = getArticle(articleId);
+  if (!art) return;
+  if (qte > art.stock) return toast(`Stock insuffisant (${art.stock})`, 'err');
+  art.stock -= qte;
+  db.ventes.push({ id: uid(), date, articleId: art.id, qte, pu, pa: art.pa, total: qte * pu });
+  if (pu < art.pa) setTimeout(() => toast('⚠️ Vendu en dessous du prix d\'achat', 'err'), 900);
+  db.mouvements.push({ id: uid(), date, articleId: art.id, articleNom: art.nom, type: 'sortie', qte, motif: 'Vente' });
+  save();
+  document.getElementById('v_qte').value = 1;
+  toast(`Vente enregistrée — Stock : ${art.stock}`, 'ok');
+  if (art.stock < 10) setTimeout(() => toast(`⚠️ ${art.nom} stock critique (${art.stock})`, 'err'), 900);
+  renderAll();
+}
+
+function deleteVente(id) {
+  const v = db.ventes.find(x => x.id == id);
+  if (!v) return;
+  if (!confirm('Annuler cette vente ?')) return;
+  const art = getArticle(v.articleId);
+  if (art) { art.stock += v.qte; db.mouvements.push({ id: uid(), date: today(), articleId: art.id, articleNom: art.nom, type: 'entree', qte: v.qte, motif: 'Annulation vente' }); }
+  db.ventes = db.ventes.filter(x => x.id != id);
+  db.inventaires.forEach(i => { if (i.venteIds) i.venteIds = i.venteIds.filter(x => x != id); });
+  save(); renderAll();
+}
+
+function renderVentes() {
+  const filtre = document.getElementById('v_filtre').value;
+  const box = document.getElementById('ventesTable');
+  let ventes = [...db.ventes].sort((a,b) => b.id - a.id);
+  if (filtre) ventes = ventes.filter(v => v.date === filtre);
+  if (!ventes.length) { box.innerHTML = '<div class="empty">Aucune vente.</div>'; return; }
+  let html = `<table><thead><tr>
+    <th>Date</th><th>Produit</th><th>Qté</th><th>P.U.</th><th>Total</th><th>Bénéfice</th><th></th>
+  </tr></thead><tbody>`;
+  let totalCA = 0, totalBenef = 0;
+  ventes.forEach(v => {
+    const art = getArticle(v.articleId);
+    const benef = art ? (v.pu - coutVente(v, art)) * v.qte : 0;
+    totalCA += v.total; totalBenef += benef;
+    html += `<tr>
+      <td>${v.date}</td><td>${art ? art.nom : '—'}${v.source === 'inventaire' ? ' <span class="badge badge-info">📋 inventaire</span>' : ''}</td><td>${v.qte}</td>
+      <td>${fmt(v.pu)} Ar</td><td><b>${fmt(v.total)} Ar</b></td>
+      <td style="color:${benef>=0?'#38a169':'#e53e3e'}">${fmt(benef)} Ar</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteVente(${v.id})">✕</button></td>
+    </tr>`;
+  });
+  html += `</tbody><tfoot><tr style="background:#ebf4ff;font-weight:800">
+    <td colspan="4">TOTAL</td><td>${fmt(totalCA)} Ar</td>
+    <td style="color:#38a169">${fmt(totalBenef)} Ar</td><td></td>
+  </tr></tfoot></table>`;
+  box.innerHTML = html;
+}
+
+/* =========================================================
+   INVENTAIRE (stock initial verrouillé)
+========================================================= */
+let invTemp = {};
+
+
+function resetInvSaisie() { invTemp = {}; renderInvSaisie(); }
+function updateInvBar() {
+  const el = document.getElementById('invBarTxt'), bar = document.getElementById('invBar'); if (!el) return;
+  let n = 0, q = 0, ca = 0;
+  Object.entries(invTemp).forEach(([id, t]) => {
+    const a = getArticle(id); if (!a || t.stockPhysique === undefined || t.stockPhysique === '') return;
+    n++; const v = a.stock - t.stockPhysique; if (v > 0) { q += v; ca += v * a.pv; }
+  });
+  if (!n) { bar.style.background = '#eff6ff'; bar.style.borderColor = '#93c5fd'; el.innerHTML = 'ℹ️ Saisissez le stock compté, puis cliquez sur <b>Enregistrer</b> : le stock et la recette ne changent qu\'à l\'enregistrement.'; }
+  else { bar.style.background = '#fff7ed'; bar.style.borderColor = '#fdba74'; el.innerHTML = `⚠️ ${n} article(s) compté(s) — <b>NON enregistré</b> • ${fmt(q)} vente(s) • recette ${fmt(ca)} Ar`; }
+}
+function renderInvSaisie() {
+  setTimeout(updateInvBar, 0);
+  const box = document.getElementById('invSaisieBox');
+  if (!db.articles.length) { box.innerHTML = '<div class="empty">Aucun article à inventorier.</div>'; return; }
+
+  const catFilter = document.getElementById('inv_filter_cat').value;
+  const search = (document.getElementById('inv_search').value || '').toLowerCase();
+
+  let list = db.articles.filter(a => {
+    if (catFilter && a.categorie !== catFilter) return false;
+    if (search && !a.nom.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  if (!list.length) { box.innerHTML = '<div class="empty">Aucun article correspondant.</div>'; return; }
+
+  let html = `<div class="inv-row header">
+    <div>Article</div>
+    <div>Stock initial 🔒</div>
+    <div>Stock physique (compté)</div>
+    <div>Ventes théoriques</div>
+  </div>`;
+
+  list.forEach(a => {
+    const temp = invTemp[a.id] || {};
+    const si = a.stock; // 🔒 VERROUILLÉ = stock réel actuel
+    const sp = temp.stockPhysique !== undefined ? temp.stockPhysique : '';
+    const ventes = (sp === '' || sp === null) ? '—' : (si - Number(sp));
+    html += `<div class="inv-row">
+      <div><b>${a.nom}</b> ${a.categorie ? `<span class="badge badge-cat" style="font-size:10px">${a.categorie}</span>` : ''}</div>
+      <div><input type="number" value="${si}" readonly title="Stock initial calculé automatiquement depuis le stock réel"></div>
+      <div><input type="number" min="0" step="1" value="${sp}" placeholder="—" onchange="invChange(${a.id},'stockPhysique',this.value)"></div>
+      <div style="font-weight:700;color:${ventes!=='—' && ventes>0 ? '#38a169' : ventes!=='—' && ventes<0 ? '#e53e3e' : '#718096'}">${ventes === '—' ? '—' : fmt(ventes)}${ventes!=='—' && ventes>0 ? `<div style="font-size:11px;font-weight:600">= ${fmt(ventes * a.pv)} Ar${a.pv<=0 ? ' ⚠️ PV manquant' : ''}</div>` : ''}${ventes!=='—' && ventes<0 ? '<div style="font-size:11px">écart (+)</div>' : ''}</div>
+    </div>`;
+  });
+
+  box.innerHTML = html;
+}
+
+function invChange(articleId, field, val) {
+  if (!invTemp[articleId]) invTemp[articleId] = {};
+  if (String(val).trim() === '') delete invTemp[articleId][field];
+  else invTemp[articleId][field] = Math.max(0, Number(val) || 0);
+  renderInvSaisie();
+}
+
+function enregistrerInventaire() {
+  const date = document.getElementById('inv_date').value || today();
+  const entries = Object.entries(invTemp).filter(([id, v]) => v.stockPhysique !== undefined && v.stockPhysique !== '');
+  if (!entries.length) return toast('Aucun stock physique saisi', 'err');
+
+  const sansPV = entries.map(([id, v]) => getArticle(id)).filter(a => a && a.stock > invTemp[a.id].stockPhysique && !(a.pv > 0));
+  if (sansPV.length) return toast('Prix de vente manquant : ' + sansPV.slice(0,4).map(a => a.nom).join(', ') + (sansPV.length > 4 ? '…' : ''), 'err');
+
+  const invId = uid();
+  const inv = { id: invId, date, venteIds: [], lignes: [] };
+  let recette = 0;
+
+  entries.forEach(([id, v]) => {
+    const a = getArticle(id);
+    if (!a) return;
+    const si = a.stock, sp = v.stockPhysique, diff = si - sp;
+    inv.lignes.push({ articleId: a.id, articleNom: a.nom, stockInitial: si, stockPhysique: sp, ventes: diff, pu: a.pv });
+    if (diff > 0) {
+      const vid = uid();
+      db.ventes.push({ id: vid, date, articleId: a.id, qte: diff, pu: a.pv, pa: a.pa, total: diff * a.pv, source: 'inventaire', inventaireId: invId });
+      inv.venteIds.push(vid);
+      db.mouvements.push({ id: uid(), date, articleId: a.id, articleNom: a.nom, type: 'sortie', qte: diff, motif: 'Vente (inventaire)' });
+      recette += diff * a.pv;
+    } else if (diff < 0) {
+      db.mouvements.push({ id: uid(), date, articleId: a.id, articleNom: a.nom, type: 'entree', qte: -diff, motif: 'Écart inventaire (+)' });
+    }
+    a.stock = sp;
+  });
+
+  db.inventaires.push(inv);
+  invTemp = {};
+  save();
+  renderAll();
+  toast(`Inventaire enregistré ✓ — recette ajoutée : ${fmt(recette)} Ar`, 'ok');
+}
+
+function renderInvHist() {
+  const box = document.getElementById('invHistBox');
+  if (!db.inventaires.length) { box.innerHTML = '<div class="empty">Aucun inventaire enregistré.</div>'; return; }
+  let html = '';
+  [...db.inventaires].sort((a,b) => b.id - a.id).forEach(inv => {
+    let totalVentes = 0;
+    inv.lignes.forEach(l => { if (l.ventes > 0) totalVentes += l.ventes; });
+    html += `<div style="margin-bottom:14px; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden">
+      <div style="background:#edf2f7; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px">
+        <b>📅 Inventaire du ${inv.date}</b>
+        <div style="display:flex; gap:8px; align-items:center">
+          <span style="font-size:13px;color:#4a5568">${inv.lignes.length} article(s) • ${fmt(totalVentes)} vente(s) • ${fmt(inv.lignes.reduce((t,l)=>t+(l.ventes>0?l.ventes*(l.pu||0):0),0))} Ar</span>
+          <button class="btn btn-primary btn-sm" onclick="imprimerInventaireHist(${inv.id})">🖨️</button>
+          <button class="btn btn-danger btn-sm admin-only" onclick="deleteInventaire(${inv.id})">✕</button>
+        </div>
+      </div>
+      <div style="padding:10px">
+      <table><thead><tr>
+        <th>Article</th><th>Stock initial</th><th>Stock physique</th><th>Ventes théoriques</th>
+      </tr></thead><tbody>`;
+    inv.lignes.forEach(l => {
+      const vColor = l.ventes > 0 ? '#38a169' : l.ventes < 0 ? '#e53e3e' : '#718096';
+      html += `<tr>
+        <td><b>${l.articleNom}</b></td>
+        <td>${l.stockInitial}</td>
+        <td>${l.stockPhysique}</td>
+        <td style="font-weight:700;color:${vColor}">${fmt(l.ventes)}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div></div>`;
+  });
+  box.innerHTML = html;
+}
+
+function deleteInventaire(id) {
+  if (!confirm('Supprimer cet inventaire ? Les ventes générées seront annulées et le stock restauré.')) return;
+  const inv = db.inventaires.find(i => i.id == id);
+  if (inv && inv.venteIds && inv.venteIds.length) {
+    inv.venteIds.forEach(vid => {
+      const v = db.ventes.find(x => x.id == vid);
+      if (!v) return;
+      const a = getArticle(v.articleId);
+      if (a) { a.stock += v.qte; db.mouvements.push({ id: uid(), date: today(), articleId: a.id, articleNom: a.nom, type: 'entree', qte: v.qte, motif: 'Annulation inventaire' }); }
+      db.ventes = db.ventes.filter(x => x.id != vid);
+    });
+  }
+  db.inventaires = db.inventaires.filter(i => i.id != id);
+  save(); renderAll();
+}
+
+function imprimerInventaire() {
+  const date = document.getElementById('inv_date').value || today();
+  const entries = Object.entries(invTemp).filter(([id, v]) => v.stockPhysique !== undefined && v.stockPhysique !== '');
+  if (!entries.length) return toast('Rien à imprimer', 'err');
+  let html = `<h1>🛒 e-tsena — Feuille d'inventaire du ${date}</h1>
+    <table><thead><tr>
+      <th>Article</th><th>Stock initial</th><th>Stock physique</th><th>Ventes</th>
+    </tr></thead><tbody>`;
+  entries.forEach(([id, v]) => {
+    const a = getArticle(id);
+    const si = a ? a.stock : 0;
+    const sp = v.stockPhysique;
+    html += `<tr>
+      <td>${a ? a.nom : '?'}</td>
+      <td>${si}</td>
+      <td>${sp}</td>
+      <td>${si - sp}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  openPrintWindow(html, `Inventaire ${date}`);
+}
+
+function imprimerInventaireHist(id) {
+  const inv = db.inventaires.find(i => i.id == id);
+  if (!inv) return;
+  let html = `<h1>🛒 e-tsena — Inventaire du ${inv.date}</h1>
+    <table><thead><tr>
+      <th>Article</th><th>Stock initial</th><th>Stock physique</th><th>Ventes théoriques</th>
+    </tr></thead><tbody>`;
+  inv.lignes.forEach(l => {
+    html += `<tr><td>${l.articleNom}</td><td>${l.stockInitial}</td><td>${l.stockPhysique}</td><td>${l.ventes}</td></tr>`;
+  });
+  html += `</tbody></table>`;
+  openPrintWindow(html, `Inventaire ${inv.date}`);
+}
+
+/* =========================================================
+   STOCK
+========================================================= */
+function renderStock() {
+  const alertBox = document.getElementById('alertesStock');
+  const critiques = db.articles.filter(a => a.stock < 10);
+  if (critiques.length) {
+    alertBox.innerHTML = `<div class="alert-box">⚠️ ${critiques.length} article(s) &lt; 10 : ` +
+      critiques.map(a => `${a.nom} (${a.stock})`).join(' • ') +
+      `<br><button class="btn btn-warn btn-sm" style="margin-top:8px" onclick="goTab('commande')">🔔 Voir les commandes</button></div>`;
+  } else {
+    alertBox.innerHTML = '<div class="alert-box" style="background:#f0fff4;border-color:#38a169;color:#22543d">✅ Tous les stocks ≥ 10.</div>';
+  }
+  const box = document.getElementById('stockTable');
+  if (!db.articles.length) { box.innerHTML = '<div class="empty">Aucun article.</div>'; return; }
+  let html = `<table><thead><tr>
+    <th>Produit</th><th>Catégorie</th><th>Stock</th><th>Min</th><th>Statut</th>
+    <th>Valeur (achat)</th><th>Action</th>
+  </tr></thead><tbody>`;
+  let totalVal = 0;
+  db.articles.forEach(a => {
+    totalVal += a.stock * a.pa;
+    const statut = a.stock <= 0 ? '<span class="badge badge-danger">RUPTURE</span>'
+                 : a.stock < 10 ? '<span class="badge badge-danger">🔔 À COMMANDER</span>'
+                 : a.stock < a.min ? '<span class="badge badge-warn">⚠️ Faible</span>'
+                 : '<span class="badge badge-ok">✔ OK</span>';
+    html += `<tr>
+      <td><b>${a.nom}</b></td>
+      <td>${a.categorie ? `<span class="badge badge-cat">${a.categorie}</span>` : '—'}</td>
+      <td style="font-size:16px;font-weight:700">${a.stock} ${a.unite}</td>
+      <td>${a.min}</td>
+      <td>${statut}</td>
+      <td>${fmt(a.stock * a.pa)} Ar</td>
+      <td><button class="btn btn-warn btn-sm" onclick="openCmdRapide(${a.id})">🔔 Commander</button></td>
+    </tr>`;
+  });
+  html += `</tbody><tfoot><tr style="background:#ebf4ff;font-weight:800">
+    <td colspan="5">VALEUR TOTALE STOCK</td>
+    <td>${fmt(totalVal)} Ar</td><td></td></tr></tfoot></table>`;
+  box.innerHTML = html;
+}
+
+function renderStockIng() {
+  const alertBox = document.getElementById('alertesIngStock');
+  const critiques = db.ingredients.filter(i => i.stock <= i.min);
+  if (critiques.length) {
+    alertBox.innerHTML = `<div class="alert-box">⚠️ ${critiques.length} ingrédient(s) faible(s) : ` +
+      critiques.map(i => `${i.nom} (${i.stock} ${i.unite})`).join(' • ') + `</div>`;
+  } else {
+    alertBox.innerHTML = '<div class="alert-box" style="background:#f0fff4;border-color:#38a169;color:#22543d">✅ Tous les ingrédients OK.</div>';
+  }
+  const box = document.getElementById('stockIngTable');
+  if (!db.ingredients.length) { box.innerHTML = '<div class="empty">Aucun ingrédient.</div>'; return; }
+  let html = `<table><thead><tr>
+    <th>Ingrédient</th><th>Stock</th><th>Min</th><th>Unité</th><th>Prix unit.</th>
+    <th>Valeur</th><th>Statut</th><th>Action</th>
+  </tr></thead><tbody>`;
+  let totalVal = 0;
+  db.ingredients.forEach(i => {
+    totalVal += i.stock * i.pu;
+    const statut = i.stock <= 0 ? '<span class="badge badge-danger">ÉPUISÉ</span>'
+                 : i.stock <= i.min ? '<span class="badge badge-warn">⚠️ Faible</span>'
+                 : '<span class="badge badge-ok">✔ OK</span>';
+    html += `<tr>
+      <td><b>${i.nom}</b></td><td style="font-size:16px;font-weight:700">${i.stock}</td>
+      <td>${i.min}</td><td>${i.unite}</td><td>${fmt(i.pu)} Ar</td>
+      <td>${fmt(i.stock * i.pu)} Ar</td><td>${statut}</td>
+      <td><button class="btn btn-warn btn-sm" onclick="commanderIngredient(${i.id})">🔔</button></td>
+    </tr>`;
+  });
+  html += `</tbody><tfoot><tr style="background:#ebf4ff;font-weight:800">
+    <td colspan="5">VALEUR TOTALE INGRÉDIENTS</td>
+    <td>${fmt(totalVal)} Ar</td><td colspan="2"></td></tr></tfoot></table>`;
+  box.innerHTML = html;
+}
+
+/* =========================================================
+   INGRÉDIENTS
+========================================================= */
+function addIngredient() {
+  const nom = document.getElementById('p_nom').value.trim();
+  const unite = document.getElementById('p_unite').value.trim() || 'unité';
+  const stock = Number(document.getElementById('p_stock').value) || 0;
+  const min = Number(document.getElementById('p_min').value) || 2;
+  const pu = Number(document.getElementById('p_pu').value) || 0;
+  const fourn = document.getElementById('p_fourn').value.trim() || 'Production locale';
+  if (!nom) return toast("Nom obligatoire", 'err');
+  db.ingredients.push({ id: uid(), nom, unite, stock, min, pu, fourn });
+  save();
+  ['p_nom','p_unite','p_stock','p_pu','p_fourn'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('p_min').value = 2;
+  toast('Ingrédient ajouté ✓', 'ok');
+  renderAll();
+}
+
+function deleteIngredient(id) {
+  if (!confirm('Supprimer cet ingrédient ?')) return;
+  db.ingredients = db.ingredients.filter(i => i.id != id);
+  save(); renderAll();
+}
+
+function consommerIngredient() {
+  const date = document.getElementById('ing_date').value || today();
+  const ingId = document.getElementById('ing_select').value;
+  const qte = Number(document.getElementById('ing_qte').value) || 0;
+  const note = document.getElementById('ing_note').value.trim();
+  if (!ingId) return toast('Sélectionnez un ingrédient', 'err');
+  if (qte <= 0) return toast('Quantité invalide', 'err');
+  const i = getIngredient(ingId);
+  if (!i) return;
+  if (qte > i.stock) return toast(`Stock insuffisant (${i.stock})`, 'err');
+  i.stock -= qte;
+  db.consoIng.push({
+    id: uid(), date, ingredientId: i.id, ingredientNom: i.nom,
+    qte, unite: i.unite, note: note || 'Consommation production'
+  });
+  save();
+  document.getElementById('ing_qte').value = 1;
+  document.getElementById('ing_note').value = '';
+  toast(`Consommation — Reste : ${i.stock}`, 'ok');
+  renderAll();
+}
+
+function renderIngredients() {
+  const box = document.getElementById('ingredientsTable');
+  if (!db.ingredients.length) { box.innerHTML = '<div class="empty">Aucun ingrédient.</div>'; return; }
+  let html = `<table><thead><tr>
+    <th>Ingrédient</th><th>Unité</th><th>Stock</th><th>Min</th>
+    <th>Prix unit.</th><th>Fournisseur</th><th>Statut</th><th></th>
+  </tr></thead><tbody>`;
+  db.ingredients.forEach(i => {
+    const statut = i.stock <= 0 ? '<span class="badge badge-danger">Épuisé</span>'
+                 : i.stock <= i.min ? '<span class="badge badge-warn">Faible</span>'
+                 : '<span class="badge badge-ok">OK</span>';
+    html += `<tr>
+      <td><b>${i.nom}</b></td><td>${i.unite}</td>
+      <td style="font-weight:700">${i.stock}</td><td>${i.min}</td>
+      <td>${fmt(i.pu)} Ar</td><td>${i.fourn}</td><td>${statut}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteIngredient(${i.id})">✕</button></td>
+    </tr>`;
+  });
+  box.innerHTML = html + '</tbody></table>';
+}
+
+function renderConsoIng() {
+  const filtre = document.getElementById('ing_filtre').value;
+  const box = document.getElementById('consoIngTable');
+  let list = [...db.consoIng].sort((a,b) => b.id - a.id);
+  if (filtre) list = list.filter(c => c.date === filtre);
+  if (!list.length) { box.innerHTML = '<div class="empty">Aucune consommation.</div>'; return; }
+  let html = `<table><thead><tr>
+    <th>Date</th><th>Ingrédient</th><th>Qté</th><th>Unité</th><th>Note</th><th></th>
+  </tr></thead><tbody>`;
+  list.forEach(c => {
+    html += `<tr>
+      <td>${c.date}</td><td><b>${c.ingredientNom}</b></td>
+      <td>${c.qte}</td><td>${c.unite}</td><td>${c.note}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteConso(${c.id})">✕</button></td>
+    </tr>`;
+  });
+  box.innerHTML = html + '</tbody></table>';
+}
+
+function deleteConso(id) {
+  const c = db.consoIng.find(x => x.id == id);
+  if (!c) return;
+  if (!confirm('Annuler cette consommation ?')) return;
+  const i = getIngredient(c.ingredientId);
+  if (i) i.stock += c.qte;
+  db.consoIng = db.consoIng.filter(x => x.id != id);
+  save(); renderAll();
+}
+
+/* =========================================================
+   COMMANDES
+========================================================= */
+function onCmdArticleChange() {
+  const a = getArticle(document.getElementById('cmd_article').value);
+  if (!a) return;
+  document.getElementById('cmd_fournisseur').value = a.fournisseur || '';
+  const sel = document.getElementById('cmd_cond');
+  let opts = `<option value="unite|1|${a.pa}">📦 Unité (1 × ${fmt(a.pa)} Ar)</option>`;
+  a.conditionnements.forEach((c, i) => {
+    opts += `<option value="cond|${i}|${c.prix}">${c.nom} (${c.qte}p × ${fmt(c.prix)} Ar)</option>`;
+  });
+  sel.innerHTML = opts;
+  onCmdCondChange();
+}
+
+function onCmdCondChange() {
+  const val = document.getElementById('cmd_cond').value;
+  if (!val) return;
+  const parts = val.split('|');
+  document.getElementById('cmd_pc').value = parts[2];
+  calcCmdTotal();
+}
+
+function calcCmdTotal() {
+  const qte = Number(document.getElementById('cmd_qte').value) || 0;
+  const pc = Number(document.getElementById('cmd_pc').value) || 0;
+  document.getElementById('cmd_total').textContent = fmt(qte * pc) + ' Ar';
+}
+
+function addCommandeManuelle() {
+  const articleId = document.getElementById('cmd_article').value;
+  const fournisseur = document.getElementById('cmd_fournisseur').value.trim();
+  const condVal = document.getElementById('cmd_cond').value;
+  const qte = Number(document.getElementById('cmd_qte').value) || 0;
+  const pc = Number(document.getElementById('cmd_pc').value) || 0;
+  const note = document.getElementById('cmd_note').value.trim();
+  if (!articleId) return toast('Sélectionnez un article', 'err');
+  if (qte <= 0) return toast('Quantité invalide', 'err');
+  const a = getArticle(articleId);
+  if (!a) return;
+  let condNom = 'Unité', condQte = 1;
+  if (condVal.startsWith('cond|')) {
+    const idx = Number(condVal.split('|')[1]);
+    const c = a.conditionnements[idx];
+    if (c) { condNom = c.nom; condQte = c.qte; }
+  }
+  db.commandes.push({
+    id: uid(), date: today(), articleId: a.id, articleNom: a.nom,
+    fournisseur, conditionnement: condNom, qteParCond: condQte,
+    qte, prixCond: pc, total: qte * pc, note, type: 'article', statut: 'attente'
+  });
+  save();
+  document.getElementById('cmd_qte').value = 1;
+  document.getElementById('cmd_note').value = '';
+  toast('Commande enregistrée ✓', 'ok');
+  renderCommande();
+}
+
+function openCmdRapide(articleId) {
+  const a = getArticle(articleId);
+  if (!a) return;
+  document.getElementById('cr_article').value = a.nom;
+  document.getElementById('cr_fournisseur').value = a.fournisseur || '—';
+  const sel = document.getElementById('cr_cond');
+  let opts = `<option value="unite|1|${a.pa}">📦 Unité (1 × ${fmt(a.pa)} Ar)</option>`;
+  a.conditionnements.forEach((c, i) => {
+    opts += `<option value="cond|${i}|${c.prix}">${c.nom} (${c.qte}p × ${fmt(c.prix)} Ar)</option>`;
+  });
+  sel.innerHTML = opts;
+  document.getElementById('cr_qte').value = 1;
+  document.getElementById('cr_pc').value = a.pa;
+  document.getElementById('cr_note').value = '';
+  document.getElementById('modalCmdRapide').dataset.articleId = articleId;
+  calcCrTotal();
+  document.getElementById('modalCmdRapide').classList.add('show');
+}
+
+function onCrCondChange() {
+  const parts = document.getElementById('cr_cond').value.split('|');
+  document.getElementById('cr_pc').value = parts[2];
+  calcCrTotal();
+}
+
+function calcCrTotal() {
+  const qte = Number(document.getElementById('cr_qte').value) || 0;
+  const pc = Number(document.getElementById('cr_pc').value) || 0;
+  document.getElementById('cr_total').textContent = fmt(qte * pc) + ' Ar';
+}
+
+function validerCmdRapide() {
+  const articleId = document.getElementById('modalCmdRapide').dataset.articleId;
+  const a = getArticle(articleId);
+  if (!a) return;
+  const condVal = document.getElementById('cr_cond').value;
+  const qte = Number(document.getElementById('cr_qte').value) || 0;
+  const pc = Number(document.getElementById('cr_pc').value) || 0;
+  const note = document.getElementById('cr_note').value.trim();
+  if (qte <= 0) return toast('Quantité invalide', 'err');
+  let condNom = 'Unité', condQte = 1;
+  if (condVal.startsWith('cond|')) {
+    const idx = Number(condVal.split('|')[1]);
+    const c = a.conditionnements[idx];
+    if (c) { condNom = c.nom; condQte = c.qte; }
+  }
+  db.commandes.push({
+    id: uid(), date: today(), articleId: a.id, articleNom: a.nom,
+    fournisseur: a.fournisseur || '', conditionnement: condNom, qteParCond: condQte,
+    qte, prixCond: pc, total: qte * pc, note, type: 'article', statut: 'attente'
+  });
+  save();
+  closeModal('modalCmdRapide');
+  toast('Commande enregistrée ✓', 'ok');
+  renderCommande();
+}
+
+function commanderIngredient(ingId) {
+  const i = getIngredient(ingId);
+  if (!i) return;
+  const qte = prompt(`Quantité à commander pour "${i.nom}" (${i.unite}) :`, '5');
+  if (qte === null) return;
+  const q = Number(qte) || 0;
+  if (q <= 0) return toast('Quantité invalide', 'err');
+  const prix = prompt(`Prix unitaire (Ar) :`, i.pu);
+  if (prix === null) return;
+  const p = Number(prix) || 0;
+  db.commandes.push({
+    id: uid(), date: today(), articleId: i.id, articleNom: i.nom,
+    fournisseur: i.fourn, conditionnement: i.unite, qteParCond: 1,
+    qte: q, prixCond: p, total: q * p, note: 'Commande ingrédient', type: 'ingredient', statut: 'attente'
+  });
+  save();
+  toast('Commande ingrédient ✓', 'ok');
+  renderCommande();
+}
+
+function renderCommande() {
+  const critiques = db.articles.filter(a => a.stock < 10);
+  const alertBox = document.getElementById('commandeAlertes');
+  if (critiques.length) {
+    alertBox.innerHTML = `<div class="commande-banner">⚠️ ${critiques.length} article(s) à réapprovisionner (stock &lt; 10).</div>`;
+  } else {
+    alertBox.innerHTML = '<div class="commande-banner" style="background:#f0fff4;border-color:#38a169;color:#22543d">✅ Aucun article sous le seuil de 10.</div>';
+  }
+
+  const box = document.getElementById('commandeTable');
+  if (!critiques.length) {
+    box.innerHTML = '<div class="empty">Aucune suggestion automatique.</div>';
+  } else {
+    let html = `<table><thead><tr>
+      <th>Article</th><th>Catégorie</th><th>Stock</th><th>Fournisseur</th>
+      <th>Conditionnements</th><th>PA unit.</th><th>Action</th>
+    </tr></thead><tbody>`;
+    critiques.forEach(a => {
+      const conds = a.conditionnements.length
+        ? a.conditionnements.map(c => `<span class="cond-tag">${c.nom}: ${c.qte}p × ${fmt(c.prix)}Ar</span>`).join('')
+        : '<span style="color:#a0aec0;font-size:12px">—</span>';
+      html += `<tr>
+        <td><b>${a.nom}</b></td>
+        <td>${a.categorie ? `<span class="badge badge-cat">${a.categorie}</span>` : '—'}</td>
+        <td style="color:#e53e3e;font-weight:800">${a.stock}</td>
+        <td>${a.fournisseur || '—'}</td>
+        <td>${conds}</td>
+        <td>${fmt(a.pa)} Ar</td>
+        <td><button class="btn btn-success btn-sm" onclick="openCmdRapide(${a.id})">🔔 Commander</button></td>
+      </tr>`;
+    });
+    box.innerHTML = html + '</tbody></table>';
+  }
+
+  renderCommandesParFournisseur();
+
+  const hist = document.getElementById('commandesHist');
+  if (!db.commandes.length) { hist.innerHTML = '<div class="empty">Aucune commande.</div>'; return; }
+  let html = `<table><thead><tr>
+    <th>Date</th><th>Article/Ingrédient</th><th>Type</th><th>Fournisseur</th>
+    <th>Cond.</th><th>Qté</th><th>Total</th><th>Note</th><th></th>
+  </tr></thead><tbody>`;
+  [...db.commandes].sort((a,b) => b.id - a.id).forEach(c => {
+    const typeBadge = c.type === 'ingredient'
+      ? '<span class="badge badge-info">Ingrédient</span>'
+      : '<span class="badge badge-ok">Article</span>';
+    html += `<tr>
+      <td>${c.date}</td><td><b>${c.articleNom}</b></td>
+      <td>${typeBadge}</td><td>${c.fournisseur || '—'}</td>
+      <td>${c.conditionnement} (${c.qteParCond}p)</td>
+      <td>${c.qte}</td><td><b>${fmt(c.total)} Ar</b></td>
+      <td>${c.note || '—'}</td>
+      <td style="white-space:nowrap">${c.statut === 'attente' ? `<button class="btn btn-success btn-sm" onclick="receptionnerCommande(${c.id})">📥 Reçue</button>` : `<span class="badge badge-ok">Reçue${c.dateReception ? ' ' + c.dateReception : ''}</span>`} <button class="btn btn-danger btn-sm" onclick="deleteCommande(${c.id})">✕</button></td>
+    </tr>`;
+  });
+  hist.innerHTML = html + '</tbody></table>';
+}
+
+function renderCommandesParFournisseur() {
+  const box = document.getElementById('commandesParFournisseur');
+  if (!db.commandes.some(cmdAttente)) { box.innerHTML = '<div class="empty">Aucune commande en attente.</div>'; return; }
+  const groupes = {};
+  db.commandes.filter(cmdAttente).forEach(c => {
+    const f = c.fournisseur || 'Sans fournisseur';
+    if (!groupes[f]) groupes[f] = [];
+    groupes[f].push(c);
+  });
+  let html = '';
+  Object.entries(groupes).forEach(([fournisseur, cmds]) => {
+    let totalFourn = 0;
+    let html_lignes = '';
+    cmds.forEach(c => {
+      totalFourn += c.total;
+      html_lignes += `<tr>
+        <td>${c.date}</td><td><b>${c.articleNom}</b></td>
+        <td>${c.conditionnement} (${c.qteParCond}p)</td>
+        <td>${c.qte}</td>
+        <td>${fmt(c.prixCond)} Ar</td>
+        <td><b>${fmt(c.total)} Ar</b></td>
+        <td>${c.note || '—'}</td>
+        <td style="white-space:nowrap"><button class="btn btn-primary btn-sm" onclick="editCommande(${c.id})">✏️</button> <button class="btn btn-danger btn-sm" onclick="deleteCommande(${c.id})">✕</button></td>
+      </tr>`;
+    });
+    html += `
+      <div class="fourn-card">
+        <div class="fourn-card-header">
+          <h3>🚚 ${fournisseur} <span style="font-weight:400;font-size:13px;opacity:.9">(${cmds.length} commande${cmds.length>1?'s':''} • Total : ${fmt(totalFourn)} Ar)</span></h3>
+          <button onclick="imprimerCommandeFournisseur('${fournisseur.replace(/'/g, "\\'")}')">🖨️ Imprimer commande</button>
+        </div>
+        <div class="fourn-card-body">
+          <table><thead><tr>
+            <th>Date</th><th>Article</th><th>Conditionnement</th><th>Qté</th>
+            <th>Prix cond.</th><th>Total</th><th>Note</th><th></th>
+          </tr></thead><tbody>${html_lignes}</tbody>
+          <tfoot><tr style="background:#ebf4ff;font-weight:800">
+            <td colspan="5">TOTAL</td><td>${fmt(totalFourn)} Ar</td><td></td><td></td>
+          </tr></tfoot></table>
+        </div>
+      </div>
+    `;
+  });
+  box.innerHTML = html;
+}
+
+function imprimerCommandeFournisseur(fournisseur) {
+  const cmds = db.commandes.filter(c => cmdAttente(c) && (c.fournisseur || 'Sans fournisseur') === fournisseur);
+  if (!cmds.length) return toast('Aucune commande', 'err');
+  let total = 0;
+  let html = `<h1>🛒 e-tsena — Commande</h1>
+    <h2 style="margin:10px 0">Fournisseur : ${fournisseur}</h2>
+    <p style="font-size:13px">Date d'impression : ${new Date().toLocaleString('fr-FR')}</p>
+    <table style="margin-top:14px"><thead><tr>
+      <th>Date</th><th>Article</th><th>Conditionnement</th><th>Qté</th>
+      <th>Prix cond. (Ar)</th><th>Total (Ar)</th><th>Note</th>
+    </tr></thead><tbody>`;
+  cmds.forEach(c => {
+    total += c.total;
+    html += `<tr>
+      <td>${c.date}</td><td>${c.articleNom}</td>
+      <td>${c.conditionnement} (${c.qteParCond} p.)</td>
+      <td>${c.qte}</td>
+      <td>${fmt(c.prixCond)}</td>
+      <td>${fmt(c.total)}</td>
+      <td>${c.note || '—'}</td>
+    </tr>`;
+  });
+  html += `</tbody><tfoot><tr style="background:#ebf4ff;font-weight:800">
+    <td colspan="5">TOTAL</td><td>${fmt(total)}</td><td></td>
+  </tr></tfoot></table>
+  <div style="margin-top:40px; display:flex; justify-content:space-between">
+    <div>Signature commanditaire<br><br>__________________</div>
+    <div>Signature fournisseur<br><br>__________________</div>
+  </div>`;
+  openPrintWindow(html, `Commande ${fournisseur}`);
+}
+
+function deleteCommande(id) {
+  if (!confirm('Supprimer cette commande ?')) return;
+  annulerReception(id);
+  db.commandes = db.commandes.filter(c => c.id != id);
+  save(); renderCommande();
+}
+
+/* =========================================================
+   FOURNISSEURS GÉNÉRIQUES
+========================================================= */
+function makeFournisseurHandler(listKey, prefix) {
+  return {
+    add: function() {
+      const nom = document.getElementById(prefix + '_nom').value.trim();
+      const unite = document.getElementById(prefix + '_unite').value.trim() || 'unité';
+      const qte = Number(document.getElementById(prefix + '_qte').value) || 0;
+      const pu = Number(document.getElementById(prefix + '_pu').value) || 0;
+      const contact = document.getElementById(prefix + '_contact').value.trim();
+      if (!nom) return toast('Nom obligatoire', 'err');
+      if (qte <= 0) return toast('Quantité invalide', 'err');
+      db[listKey].push({ id: uid(), nom, unite, qte, pu, contact, total: qte * pu });
+      save();
+      [prefix + '_nom', prefix + '_unite', prefix + '_pu'].forEach(i => document.getElementById(i).value = '');
+      document.getElementById(prefix + '_qte').value = 1;
+      toast('Produit ajouté ✓', 'ok');
+      this.render(); renderDashboard();
+    },
+    del: function(id) {
+      if (!confirm('Supprimer ce produit ?')) return;
+      db[listKey] = db[listKey].filter(x => x.id != id);
+      save(); this.render(); renderDashboard();
+    },
+    render: function() {
+      const box = document.getElementById(listKey + 'Table');
+      if (!db[listKey].length) { box.innerHTML = '<div class="empty">Aucun produit.</div>'; return; }
+      let html = `<table><thead><tr>
+        <th>Produit</th><th>Unité</th><th>Qté</th><th>Prix unit.</th><th>Total</th><th>Contact</th><th></th>
+      </tr></thead><tbody>`;
+      let total = 0;
+      db[listKey].forEach(g => {
+        total += g.total;
+        html += `<tr>
+          <td><b>${g.nom}</b></td><td>${g.unite}</td><td>${g.qte}</td>
+          <td>${fmt(g.pu)} Ar</td><td><b>${fmt(g.total)} Ar</b></td>
+          <td>${g.contact}</td>
+          <td><button class="btn btn-danger btn-sm" onclick="${listKey}Del(${g.id})">✕</button></td>
+        </tr>`;
+      });
+      html += `</tbody><tfoot><tr style="background:#ebf4ff;font-weight:800">
+        <td colspan="4">TOTAL</td><td>${fmt(total)} Ar</td><td colspan="2"></td>
+      </tr></tfoot></table>`;
+      box.innerHTML = html;
+    }
+  };
+}
+
+const grossisteH = makeFournisseurHandler('grossiste', 'g');
+const pranH = makeFournisseurHandler('pran', 'pr');
+const jelaxyH = makeFournisseurHandler('jelaxy', 'je');
+const hasinaH = makeFournisseurHandler('hasina', 'ha');
+
+function addGrossiste() { grossisteH.add(); }
+function deleteGrossiste(id) { grossisteH.del(id); }
+function renderGrossiste() { grossisteH.render(); }
+
+function addPran() { pranH.add(); }
+function deletePran(id) { pranH.del(id); }
+function renderPran() { pranH.render(); }
+
+function addJelaxy() { jelaxyH.add(); }
+function deleteJelaxy(id) { jelaxyH.del(id); }
+function renderJelaxy() { jelaxyH.render(); }
+
+function addHasina() { hasinaH.add(); }
+function deleteHasina(id) { hasinaH.del(id); }
+function renderHasina() { hasinaH.render(); }
+
+/* =========================================================
+   AUTRES FOURNISSEURS
+========================================================= */
+function addFournisseur() {
+  const nom = document.getElementById('f_nom').value.trim();
+  const categorie = document.getElementById('f_categorie').value;
+  const produitId = document.getElementById('f_produit').value;
+  const contact = document.getElementById('f_contact').value.trim();
+  const adresse = document.getElementById('f_adresse').value.trim();
+  const pa = Number(document.getElementById('f_pa').value) || 0;
+  if (!nom) return toast('Le nom est obligatoire', 'err');
+  db.fournisseurs.push({ id: uid(), nom, categorie, produitId, contact, adresse, pa });
+  save();
+  ['f_nom','f_contact','f_adresse','f_pa'].forEach(i => document.getElementById(i).value = '');
+  toast('Fournisseur ajouté ✓', 'ok');
+  renderFournisseurs(); renderDashboard();
+}
+
+function deleteFournisseur(id) {
+  if (!confirm('Supprimer ce fournisseur ?')) return;
+  db.fournisseurs = db.fournisseurs.filter(f => f.id != id);
+  save(); renderFournisseurs(); renderDashboard();
+}
+
+function renderFournisseurs() {
+  const box = document.getElementById('fournisseursTable');
+  if (!db.fournisseurs.length) { box.innerHTML = '<div class="empty">Aucun fournisseur.</div>'; return; }
+  let html = `<table><thead><tr>
+    <th>Nom</th><th>Catégorie</th><th>Produit</th><th>Contact</th>
+    <th>Adresse</th><th>Prix d'achat</th><th></th>
+  </tr></thead><tbody>`;
+  db.fournisseurs.forEach(f => {
+    const art = getArticle(f.produitId);
+    const badge = f.categorie === 'Production locale' ? 'badge-ok'
+                : f.categorie === 'Grossiste' ? 'badge-warn' : 'badge-info';
+    html += `<tr>
+      <td><b>${f.nom}</b></td>
+      <td><span class="badge ${badge}">${f.categorie || 'Autre'}</span></td>
+      <td>${art ? art.nom : '—'}</td>
+      <td>${f.contact || '—'}</td>
+      <td>${f.adresse || '—'}</td>
+      <td>${fmt(f.pa)} Ar</td>
+      <td style="white-space:nowrap"><button class="btn btn-primary btn-sm" onclick="editFournisseur(${f.id})" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="deleteFournisseur(${f.id})">✕</button></td>
+    </tr>`;
+  });
+  box.innerHTML = html + '</tbody></table>';
+}
+
+/* =========================================================
+   RECETTES (Journalière / Hebdomadaire / Mensuelle)
+========================================================= */
+let recettePeriode = 'jour';
+
+function setRecettePeriode(e, periode) {
+  recettePeriode = periode;
+  document.querySelectorAll('.period-toggle button').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  renderRecettes();
+}
+
+function renderRecettes() {
+  const box = document.getElementById('recettesResult');
+  const now = new Date();
+  let debut, fin, titre;
+
+  if (recettePeriode === 'jour') {
+    const d = today();
+    debut = d; fin = d;
+    titre = `📅 Recette journalière — ${d}`;
+  } else if (recettePeriode === 'semaine') {
+    // Lundi à Dimanche de la semaine courante
+    const jour = now.getDay() === 0 ? 7 : now.getDay(); // Lundi=1 ... Dimanche=7
+    const lundi = new Date(now); lundi.setDate(now.getDate() - jour + 1);
+    const dimanche = new Date(lundi); dimanche.setDate(lundi.getDate() + 6);
+    debut = isoLocal(lundi);
+    fin = isoLocal(dimanche);
+    titre = `📆 Recette hebdomadaire — du ${debut} au ${fin}`;
+  } else {
+    // Mensuelle (mois courant)
+    const premier = new Date(now.getFullYear(), now.getMonth(), 1);
+    const dernier = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    debut = isoLocal(premier);
+    fin = isoLocal(dernier);
+    titre = `🗓️ Recette mensuelle — ${premier.toLocaleString('fr-FR', {month:'long', year:'numeric'})}`;
+  }
+
+  const ventes = db.ventes.filter(v => v.date >= debut && v.date <= fin);
+
+  let ca = 0, benef = 0, qte = 0;
+  const parProduit = {};
+  const parJour = {};
+  const parCat = {};
+  ventes.forEach(v => {
+    const art = getArticle(v.articleId);
+    ca += v.total; qte += v.qte;
+    if (art) benef += (v.pu - coutVente(v, art)) * v.qte;
+    const nom = art ? art.nom : 'Inconnu';
+    if (!parProduit[nom]) parProduit[nom] = { qte: 0, ca: 0, benef: 0 };
+    parProduit[nom].qte += v.qte;
+    parProduit[nom].ca += v.total;
+    parProduit[nom].benef += art ? (v.pu - coutVente(v, art)) * v.qte : 0;
+
+    if (!parJour[v.date]) parJour[v.date] = { ca: 0, benef: 0 };
+    parJour[v.date].ca += v.total;
+    parJour[v.date].benef += art ? (v.pu - coutVente(v, art)) * v.qte : 0;
+
+    const cat = art && art.categorie ? art.categorie : 'Non classé';
+    if (!parCat[cat]) parCat[cat] = { qte: 0, ca: 0, benef: 0 };
+    parCat[cat].qte += v.qte;
+    parCat[cat].ca += v.total;
+    parCat[cat].benef += art ? (v.pu - coutVente(v, art)) * v.qte : 0;
+  });
+  const marge = ca > 0 ? (benef / ca * 100) : 0;
+  const nbJours = Object.keys(parJour).length;
+  const moyenneJour = nbJours > 0 ? ca / nbJours : 0;
+
+  if (!ventes.length) {
+    box.innerHTML = `<div class="empty">Aucune vente sur la période ${debut} → ${fin}.</div>`;
+    return;
+  }
+
+  let html = `
+    <h3 style="color:#2c5282;margin-bottom:12px">${titre}</h3>
+    <div class="stats">
+      <div class="stat"><h4>Chiffre d'affaires</h4><div class="value">${fmt(ca)} Ar</div></div>
+      <div class="stat green"><h4>Bénéfice brut</h4><div class="value">${fmt(benef)} Ar</div></div>
+      <div class="stat orange"><h4>Articles vendus</h4><div class="value">${qte}</div></div>
+      <div class="stat"><h4>Marge</h4><div class="value">${marge.toFixed(1)}%</div></div>
+      <div class="stat purple"><h4>Transactions</h4><div class="value">${ventes.length}</div></div>
+      <div class="stat"><h4>Moyenne / jour</h4><div class="value">${fmt(Math.round(moyenneJour))} Ar</div></div>
+    </div>
+  `;
+
+  // Détail par jour (si semaine ou mois)
+  if (recettePeriode !== 'jour' && Object.keys(parJour).length > 1) {
+    html += `<h3 style="color:#2c5282;margin:14px 0 8px">📅 Détail par jour</h3>
+      <table><thead><tr>
+        <th>Date</th><th>CA</th><th>Bénéfice</th>
+      </tr></thead><tbody>`;
+    Object.entries(parJour).sort((a,b) => a[0].localeCompare(b[0])).forEach(([date, d]) => {
+      html += `<tr>
+        <td><b>${date}</b></td>
+        <td>${fmt(d.ca)} Ar</td>
+        <td style="color:#38a169">${fmt(d.benef)} Ar</td>
+      </tr>`;
+    });
+    html += `</tbody><tfoot><tr style="background:#ebf4ff;font-weight:800">
+      <td>TOTAL</td><td>${fmt(ca)} Ar</td><td>${fmt(benef)} Ar</td>
+    </tr></tfoot></table>`;
+  }
+
+  // Détail par catégorie
+  if (Object.keys(parCat).length) {
+    html += `<h3 style="color:#2c5282;margin:18px 0 8px">🏷️ Détail par catégorie</h3>
+      <table><thead><tr>
+        <th>Catégorie</th><th>Qté</th><th>CA</th><th>Bénéfice</th>
+      </tr></thead><tbody>`;
+    Object.entries(parCat).sort((a,b) => b[1].ca - a[1].ca).forEach(([cat, d]) => {
+      html += `<tr>
+        <td><span class="badge badge-cat">${cat}</span></td>
+        <td>${d.qte}</td>
+        <td>${fmt(d.ca)} Ar</td>
+        <td style="color:#38a169">${fmt(d.benef)} Ar</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+
+  // Détail par produit
+  html += `<h3 style="color:#2c5282;margin:18px 0 8px">📦 Détail par produit</h3>
+    <table><thead><tr>
+      <th>Produit</th><th>Qté</th><th>CA</th><th>Bénéfice</th>
+    </tr></thead><tbody>`;
+  Object.entries(parProduit).sort((a,b) => b[1].ca - a[1].ca).forEach(([nom, d]) => {
+    html += `<tr>
+      <td><b>${nom}</b></td>
+      <td>${d.qte}</td>
+      <td>${fmt(d.ca)} Ar</td>
+      <td style="color:#38a169">${fmt(d.benef)} Ar</td>
+    </tr>`;
+  });
+  html += `</tbody><tfoot><tr style="background:#ebf4ff;font-weight:800">
+    <td>TOTAL</td><td>${qte}</td><td>${fmt(ca)} Ar</td><td>${fmt(benef)} Ar</td>
+  </tr></tfoot></table>`;
+
+  box.innerHTML = html;
+  box.dataset.titre = titre;
+}
+
+function imprimerRecettes() {
+  const box = document.getElementById('recettesResult');
+  const titre = box.dataset.titre || 'Recette';
+  const html = `<h1>🛒 e-tsena — ${titre}</h1>${box.innerHTML}`;
+  openPrintWindow(html, titre);
+}
+
+/* =========================================================
+   RAPPORT JOURNALIER
+========================================================= */
+function genererRapport() {
+  const a1 = document.getElementById('r_date').value || today(), a2 = document.getElementById('r_date2').value || a1;
+  const date = a1 <= a2 ? a1 : a2, date2 = a1 <= a2 ? a2 : a1, rg = d => d >= date && d <= date2;
+  const ventes = db.ventes.filter(v => rg(v.date));
+  const conso = db.consoIng.filter(c => rg(c.date));
+  const invs = db.inventaires.filter(i => rg(i.date));
+  const inv = invs.length ? { lignes: invs.flatMap(i => i.lignes) } : null;
+  const box = document.getElementById('rapportResult');
+
+  let ca = 0, benef = 0, qte = 0;
+  const parProduit = {};
+  ventes.forEach(v => {
+    const art = getArticle(v.articleId);
+    ca += v.total; qte += v.qte;
+    if (art) benef += (v.pu - coutVente(v, art)) * v.qte;
+    const nom = art ? art.nom : 'Inconnu';
+    if (!parProduit[nom]) parProduit[nom] = { qte: 0, ca: 0, benef: 0 };
+    parProduit[nom].qte += v.qte;
+    parProduit[nom].ca += v.total;
+    parProduit[nom].benef += art ? (v.pu - coutVente(v, art)) * v.qte : 0;
+  });
+  const marge = ca > 0 ? (benef / ca * 100) : 0;
+
+  if (!ventes.length && !conso.length && !inv) {
+    box.innerHTML = `<div class="card"><div class="empty">Aucune activité sur cette période.</div></div>`;
+    return;
+  }
+
+  let html = `
+  <div class="card">
+    <h2>📅 Rapport ${date === date2 ? 'du ' + date : 'du ' + date + ' au ' + date2}</h2>
+    <div class="stats">
+      <div class="stat"><h4>Chiffre d'affaires</h4><div class="value">${fmt(ca)} Ar</div></div>
+      <div class="stat green"><h4>Bénéfice brut</h4><div class="value">${fmt(benef)} Ar</div></div>
+      <div class="stat orange"><h4>Articles vendus</h4><div class="value">${qte}</div></div>
+      <div class="stat"><h4>Marge</h4><div class="value">${marge.toFixed(1)}%</div></div>
+      <div class="stat purple"><h4>Ingrédients consommés</h4><div class="value">${conso.length}</div></div>
+      <div class="stat"><h4>Transactions</h4><div class="value">${ventes.length}</div></div>
+    </div>`;
+
+  if (inv) {
+    let totalVentesTh = 0;
+    inv.lignes.forEach(l => { if (l.ventes > 0) totalVentesTh += l.ventes; });
+    html += `<h3 style="color:#2c5282;margin:14px 0 8px">📋 Inventaire du jour (${fmt(totalVentesTh)} ventes théoriques)</h3>
+      <table><thead><tr>
+        <th>Article</th><th>Stock initial</th><th>Stock physique</th><th>Ventes théoriques</th>
+      </tr></thead><tbody>`;
+    inv.lignes.forEach(l => {
+      const vColor = l.ventes > 0 ? '#38a169' : l.ventes < 0 ? '#e53e3e' : '#718096';
+      html += `<tr><td><b>${l.articleNom}</b></td>
+        <td>${l.stockInitial}</td><td>${l.stockPhysique}</td>
+        <td style="color:${vColor};font-weight:700">${fmt(l.ventes)}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+
+  if (ventes.length) {
+    html += `<h3 style="color:#2c5282;margin:14px 0 8px">💰 Détail ventes</h3>
+      <table><thead><tr>
+        <th>Produit</th><th>Qté</th><th>CA</th><th>Bénéfice</th>
+      </tr></thead><tbody>`;
+    Object.entries(parProduit).forEach(([nom, d]) => {
+      html += `<tr><td><b>${nom}</b></td><td>${d.qte}</td>
+        <td>${fmt(d.ca)} Ar</td><td style="color:#38a169">${fmt(d.benef)} Ar</td></tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+
+  if (conso.length) {
+    html += `<h3 style="color:#2c5282;margin:18px 0 8px">🏠 Ingrédients consommés</h3>
+      <table><thead><tr>
+        <th>Ingrédient</th><th>Quantité</th><th>Unité</th><th>Note</th>
+      </tr></thead><tbody>`;
+    conso.forEach(c => {
+      html += `<tr><td><b>${c.ingredientNom}</b></td>
+        <td>${c.qte}</td><td>${c.unite}</td><td>${c.note || '—'}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+  if (date !== date2 && ventes.length) {
+    const pj = {}; ventes.forEach(v => { (pj[v.date] = pj[v.date] || { q: 0, ca: 0 }); pj[v.date].q += v.qte; pj[v.date].ca += v.total; });
+    html += `<h3 style="margin:14px 0 8px">📆 Par jour</h3><table><thead><tr><th>Date</th><th>Articles</th><th>CA</th></tr></thead><tbody>${Object.keys(pj).sort().map(d => `<tr><td><b>${d}</b></td><td>${fmt(pj[d].q)}</td><td>${fmt(pj[d].ca)} Ar</td></tr>`).join('')}</tbody></table>`;
+  }
+  html += `</div>`;
+  box.innerHTML = html;
+}
+
+function imprimerRapport() {
+  const date = (document.getElementById('r_date').value || today()) + (document.getElementById('r_date2').value ? ' au ' + document.getElementById('r_date2').value : '');
+  const contenu = document.getElementById('rapportResult').innerHTML;
+  const html = `<h1>🛒 e-tsena — Rapport du ${date}</h1>${contenu}`;
+  openPrintWindow(html, `Rapport ${date}`);
+}
+
+/* =========================================================
+   UTILITAIRE IMPRESSION
+========================================================= */
+function openPrintWindow(bodyHtml, title) {
+  const w = window.open('', '', 'width=900,height=700');
+  w.document.write(`<html><head><title>${title}</title>
+    <style>
+      body { font-family: Arial; padding: 20px; color:#1a202c; }
+      h1 { color:#2c5282; margin-bottom:14px; }
+      h2 { color:#2c5282; margin:10px 0; }
+      h3 { color:#2c5282; margin:10px 0; }
+      table { width: 100%; border-collapse: collapse; margin-top:10px; }
+      th, td { border: 1px solid #cbd5e0; padding: 8px; text-align: left; font-size: 13px; }
+      th { background: #edf2f7; }
+      .stat { display: inline-block; margin: 6px; padding: 10px 14px; border: 1px solid #cbd5e0; border-radius: 8px; background:#f7fafc; }
+      .stats { display: block; margin-bottom:14px; }
+      .badge { padding: 2px 6px; border-radius: 8px; font-size: 11px; }
+      .card { border: 1px solid #cbd5e0; border-radius: 8px; padding: 12px; margin-bottom:12px; }
+      .empty { text-align:center; color:#a0aec0; font-style:italic; padding:10px; }
+      @media print { .no-print { display:none; } }
+    </style></head><body>${bodyHtml}</body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 300);
+}
+
+/* =========================================================
+   TABLEAU DE BORD
+========================================================= */
+let charts = {};
+
+function renderTopVentes() {
+  const box = document.getElementById('topVentesResult'); if (!box) return;
+  const g = id => document.getElementById(id).value;
+  const du = g('tv_du'), au = g('tv_au'), jour = g('tv_jour'), four = g('tv_four'), mode = g('tv_mode');
+  const JN = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const dow = d => new Date(d + 'T12:00:00').getDay();
+  const ventes = db.ventes.filter(v => {
+    const a = getArticle(v.articleId), f = a ? (a.fournisseur || '') : '';
+    if (du && v.date < du) return false;
+    if (au && v.date > au) return false;
+    if (jour !== '' && dow(v.date) != jour) return false;
+    if (four === '__none__' ? f !== '' : (four && f !== four)) return false;
+    return true;
+  });
+  if (!ventes.length) { box.innerHTML = '<div class="empty">Aucune vente pour ces filtres.</div>'; return; }
+  const add = (m, k, v) => { (m[k] = m[k] || { qte: 0, ca: 0 }); m[k].qte += v.qte; m[k].ca += v.total; };
+  const P = {}, J = {}, D = {};
+  ventes.forEach(v => { const a = getArticle(v.articleId); add(P, a ? a.nom : 'Inconnu', v); add(J, dow(v.date), v); add(D, v.date, v); });
+  const key = mode === 'qte' ? 'qte' : 'ca';
+  const rank = m => Object.entries(m).sort((x, y) => y[1][key] - x[1][key]);
+  const val = d => key === 'qte' ? fmt(d.qte) + ' pcs' : fmt(d.ca) + ' Ar';
+  const bar = (d, max) => `<div style="background:#e2e8f0;border-radius:4px;height:8px;min-width:80px"><div style="background:#2563eb;height:8px;border-radius:4px;width:${max ? Math.round(d[key] / max * 100) : 0}%"></div></div>`;
+  const medal = i => ['🥇','🥈','🥉'][i] || (i + 1);
+  const prod = rank(P).slice(0, 10), jours = rank(J), dates = rank(D).slice(0, 10);
+  const tCA = ventes.reduce((s, v) => s + v.total, 0), tQ = ventes.reduce((s, v) => s + v.qte, 0);
+  const tbl = (head, rows) => `<div style="overflow-x:auto"><table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  box.innerHTML = `
+    <div class="info-banner">${fmt(tCA)} Ar • ${fmt(tQ)} articles vendus • ${ventes.length} ventes${jours.length ? ` • 🔥 Meilleur jour : <b>${JN[jours[0][0]]}</b>` : ''}${dates.length ? ` • 📅 Meilleure date : <b>${dates[0][0]}</b> (${val(dates[0][1])})` : ''}</div>
+    <div class="charts">
+      <div>${'<h3 style="margin-bottom:8px">📦 Top produits</h3>'}${tbl('<th>#</th><th>Produit</th><th>Qté</th><th>CA</th>', prod.map(([n, d], i) => `<tr><td>${medal(i)}</td><td><b>${n}</b></td><td>${fmt(d.qte)}</td><td>${fmt(d.ca)} Ar</td></tr>`).join(''))}</div>
+      <div><h3 style="margin-bottom:8px">📆 Par jour de la semaine</h3>${tbl('<th>Jour</th><th>Total</th><th></th>', jours.map(([j, d], i) => `<tr><td><b>${JN[j]}</b> ${i === 0 ? '🔥' : ''}</td><td>${val(d)}</td><td>${bar(d, jours[0][1][key])}</td></tr>`).join(''))}</div>
+      <div><h3 style="margin-bottom:8px">📅 Top 10 des dates</h3>${tbl('<th>#</th><th>Date</th><th>Total</th><th></th>', dates.map(([dt, d], i) => `<tr><td>${medal(i)}</td><td><b>${dt}</b> <span style="color:#64748b;font-size:12px">${JN[dow(dt)]}</span></td><td>${val(d)}</td><td>${bar(d, dates[0][1][key])}</td></tr>`).join(''))}</div>
+    </div>`;
+}
+function renderDashboard() {
+  renderTopVentes();
+  const todayStr = today();
+  const ventesJour = db.ventes.filter(v => v.date === todayStr);
+  const caJour = ventesJour.reduce((s,v) => s + v.total, 0);
+  let benefJour = 0;
+  ventesJour.forEach(v => { const a = getArticle(v.articleId); if (a) benefJour += (v.pu - coutVente(v, a)) * v.qte; });
+
+  const caTotal = db.ventes.reduce((s,v) => s + v.total, 0);
+  let benefTotal = 0;
+  db.ventes.forEach(v => { const a = getArticle(v.articleId); if (a) benefTotal += (v.pu - coutVente(v, a)) * v.qte; });
+
+  const critiquesArt = db.articles.filter(a => a.stock < 10);
+  const critiquesIng = db.ingredients.filter(i => i.stock <= i.min);
+
+  document.getElementById('statsDash').innerHTML = `
+    <div class="stat"><h4>CA aujourd'hui</h4><div class="value">${fmt(caJour)} Ar</div></div>
+    <div class="stat green"><h4>Bénéfice aujourd'hui</h4><div class="value">${fmt(benefJour)} Ar</div></div>
+    <div class="stat orange"><h4>Ventes du jour</h4><div class="value">${ventesJour.reduce((s,v)=>s+v.qte,0)}</div></div>
+    <div class="stat"><h4>CA total</h4><div class="value">${fmt(caTotal)} Ar</div></div>
+    <div class="stat green"><h4>Bénéfice total</h4><div class="value">${fmt(benefTotal)} Ar</div></div>
+    <div class="stat red"><h4>Alertes stock</h4><div class="value">${critiquesArt.length + critiquesIng.length}</div></div>
+    <div class="stat purple"><h4>Commandes en attente</h4><div class="value">${db.commandes.filter(cmdAttente).length}</div></div>
+    <div class="stat"><h4>Articles</h4><div class="value">${db.articles.length}</div></div>
+  `;
+
+  const alertBox = document.getElementById('alertesDash');
+  let alertsHtml = '';
+  if (critiquesArt.length) {
+    alertsHtml += `<div class="alert-box">⚠️ <b>Articles</b> stock critique : ${critiquesArt.slice(0,8).map(a => `${a.nom} (${a.stock})`).join(' • ')}${critiquesArt.length>8?' …':''}</div>`;
+  }
+  if (critiquesIng.length) {
+    alertsHtml += `<div class="alert-box" style="background:#fffaf0;border-color:#dd6b20;color:#7b341e">⚠️ <b>Ingrédients</b> faibles : ${critiquesIng.map(i => `${i.nom} (${i.stock} ${i.unite})`).join(' • ')}</div>`;
+  }
+  alertBox.innerHTML = alertsHtml;
+
+  const jours = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    jours.push(isoLocal(d));
+  }
+  const caParJour = jours.map(j => db.ventes.filter(v => v.date === j).reduce((s,v)=>s+v.total,0));
+  const benefParJour = jours.map(j => {
+    let b = 0;
+    db.ventes.filter(v => v.date === j).forEach(v => {
+      const a = getArticle(v.articleId);
+      if (a) b += (v.pu - coutVente(v, a)) * v.qte;
+    });
+    return b;
+  });
+
+  const prodCount = {};
+  db.ventes.forEach(v => {
+    const a = getArticle(v.articleId);
+    if (a) prodCount[a.nom] = (prodCount[a.nom] || 0) + v.qte;
+  });
+  const top = Object.entries(prodCount).sort((a,b) => b[1]-a[1]).slice(0,5);
+
+  const catVal = {};
+  db.articles.forEach(a => {
+    const cat = a.categorie || 'Non classé';
+    catVal[cat] = (catVal[cat] || 0) + a.stock * a.pa;
+  });
+
+  if (typeof Chart === 'undefined') return;
+  Object.values(charts).forEach(c => c && c.destroy());
+
+  charts.ca = new Chart(document.getElementById('chartCA'), {
+    type: 'bar',
+    data: { labels: jours.map(j => j.slice(5)),
+      datasets: [{ label: 'CA (Ar)', data: caParJour, backgroundColor: '#4299e1' }] },
+    options: { plugins: { legend: { display: false } }, responsive: true }
+  });
+
+  charts.benef = new Chart(document.getElementById('chartBenef'), {
+    type: 'line',
+    data: { labels: jours.map(j => j.slice(5)),
+      datasets: [{ label: 'Bénéfice (Ar)', data: benefParJour, borderColor: '#38a169', backgroundColor: 'rgba(56,161,105,.2)', fill: true, tension: .3 }] },
+    options: { plugins: { legend: { display: false } }, responsive: true }
+  });
+
+  charts.top = new Chart(document.getElementById('chartTop'), {
+    type: 'doughnut',
+    data: { labels: top.length ? top.map(t => t[0]) : ['Aucune vente'],
+      datasets: [{ data: top.length ? top.map(t => t[1]) : [1],
+        backgroundColor: ['#4299e1','#48bb78','#ed8936','#e53e3e','#9f7aea'] }] },
+    options: { responsive: true }
+  });
+
+  charts.cat = new Chart(document.getElementById('chartCat'), {
+    type: 'pie',
+    data: {
+      labels: Object.keys(catVal).length ? Object.keys(catVal) : ['Aucune donnée'],
+      datasets: [{ data: Object.keys(catVal).length ? Object.values(catVal) : [1],
+        backgroundColor: ['#4299e1','#48bb78','#ed8936','#e53e3e','#9f7aea','#ed64a6','#38b2ac','#d69e2e'] }]
+    },
+    options: { responsive: true }
+  });
+}
+
+/* =========================================================
+   RENDER GLOBAL
+========================================================= */
+function renderAll() {
+  renderArticles();
+  populateCatFilter();
+  renderVentes();
+  renderStock();
+  renderStockIng();
+  renderMouvements();
+  renderFournisseurs();
+  renderIngredients();
+  renderConsoIng();
+  renderGrossiste();
+  renderPran();
+  renderJelaxy();
+  renderHasina();
+  renderCommande();
+  renderInvHist();
+  populateSelects();
+  renderInvSaisie();
+  renderDashboard();
+  renderRecettes();
+  genererRapport();
+}
+
+function populateSelects() {
+  const selV = document.getElementById('v_produit');
+  const selF = document.getElementById('f_produit');
+  const selES = document.getElementById('es_article');
+  const selCmd = document.getElementById('cmd_article');
+  const selIng = document.getElementById('ing_select');
+  const valV = selV.value, valF = selF.value, valES = selES.value, valCmd = selCmd.value, valIng = selIng.value;
+
+  const optsArt = db.articles.map(a => `<option value="${a.id}">${a.nom} (stock: ${a.stock})</option>`).join('');
+  const optsArtSimple = db.articles.map(a => `<option value="${a.id}">${a.nom}</option>`).join('');
+  const optsIng = db.ingredients.map(i => `<option value="${i.id}">${i.nom} (stock: ${i.stock} ${i.unite})</option>`).join('');
+
+  selV.innerHTML = '<option value="">-- Choisir --</option>' + optsArt;
+  selF.innerHTML = '<option value="">-- Choisir --</option>' + optsArtSimple;
+  selES.innerHTML = '<option value="">-- Choisir --</option>' + optsArtSimple;
+  selCmd.innerHTML = '<option value="">-- Choisir --</option>' + optsArtSimple;
+  selIng.innerHTML = '<option value="">-- Choisir --</option>' + optsIng;
+
+  selV.value = valV; selF.value = valF; selES.value = valES; selCmd.value = valCmd; selIng.value = valIng;
+
+  selV.onchange = () => {
+    const a = getArticle(selV.value);
+    if (a) document.getElementById('v_pu').value = a.pv;
+  };
+  selF.onchange = () => {
+    const a = getArticle(selF.value);
+    if (a) document.getElementById('f_pa').value = a.pa;
+  };
+}
+
+/* =========================================================
+   IMPORT / EXPORT
+========================================================= */
+function exportData() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `etsena_sauvegarde_${today()}.json`;
+  a.click();
+  toast('Sauvegarde exportée ✓', 'ok');
+}
+
+function exportCSV() {
+  const rows = [['Nom','Catégorie','Unité','Prix achat','Prix vente','Marge','Stock','Stock min','Fournisseur','Conditionnements']];
+  db.articles.forEach(a => {
+    const conds = a.conditionnements.map(c => `${c.nom}:${c.qte}p=${c.prix}`).join(' | ');
+    rows.push([a.nom, a.categorie || '', a.unite, a.pa, a.pv, a.pv - a.pa, a.stock, a.min, a.fournisseur || '', conds]);
+  });
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `etsena_articles_${today()}.csv`;
+  a.click();
+  toast('Export CSV ✓', 'ok');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.articles) throw new Error('Format invalide');
+      db = data;
+      ['articles','ventes','fournisseurs','ingredients','consoIng','grossiste','pran','jelaxy','hasina','mouvements','commandes','inventaires','encaissements']
+        .forEach(k => { if (!db[k]) db[k] = []; });
+      save(); renderAll();
+      toast('Données importées ✓', 'ok');
+    } catch (err) { toast('Fichier invalide', 'err'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+/* =========================================================
+   INITIALISATION
+========================================================= */
+load();
+document.getElementById('v_date').value = today();
+document.getElementById('r_date').value = today();
+document.getElementById('ing_date').value = today();
+document.getElementById('inv_date').value = today();
+
+if (!localStorage.getItem('etsena_prefill_v7')) {
+  if (db.ingredients.length === 0) {
+    const exemples = [
+      { nom: 'Huile', unite: 'Litre', stock: 5, min: 2, pu: 8000, fourn: 'Production locale' },
+      { nom: 'Vinaigre', unite: 'Litre', stock: 3, min: 1, pu: 5000, fourn: 'Production locale' },
+      { nom: 'Œufs', unite: 'Douzaine', stock: 4, min: 2, pu: 6000, fourn: 'Production locale' },
+      { nom: 'Sucre', unite: 'Kg', stock: 10, min: 3, pu: 4000, fourn: 'Production locale' },
+      { nom: 'Sel', unite: 'Kg', stock: 5, min: 1, pu: 2000, fourn: 'Production locale' },
+      { nom: 'Citron', unite: 'Kg', stock: 3, min: 1, pu: 5000, fourn: 'Production locale' },
+      { nom: 'Menthe fraîche', unite: 'Botte', stock: 6, min: 2, pu: 1500, fourn: 'Production locale' }
+    ];
+    exemples.forEach(e => db.ingredients.push({ id: uid(), ...e }));
+    save();
+  }
+  localStorage.setItem('etsena_prefill_v7', '1');
+}
+
+if (!localStorage.getItem('etsena_articles_importes_v7')) {
+  if (db.articles.length === 0) importerListeArticles();
+  localStorage.setItem('etsena_articles_importes_v7', '1');
+}
+
+(function () {
+  const puF = document.getElementById('v_pu').closest('.field');
+  const tf = document.createElement('div'); tf.className = 'field';
+  tf.innerHTML = '<label>Total</label><input id="v_total" readonly value="0 Ar">';
+  puF.after(tf);
+  const upd = () => { document.getElementById('v_total').value = fmt((Number(v_qte.value)||0) * (Number(v_pu.value)||0)) + ' Ar'; };
+  ['v_qte','v_pu'].forEach(id => document.getElementById(id).addEventListener('input', upd));
+  document.getElementById('v_produit').addEventListener('change', () => setTimeout(() => { upd(); v_qte.focus(); v_qte.select(); }, 0));
+  document.getElementById('v_qte').addEventListener('input', upd);
+})();
+
+/* ===================== v11 ===================== */
+const byId = id => document.getElementById(id);
+const BUVETTES = ['Buvette 1 (Bureau)', 'Buvette 2 (Grande cour)'];
+let buvActive = localStorage.getItem('etsena_buv') || BUVETTES[0];
+let buvAll = localStorage.getItem('etsena_buvall') === '1';
+const buvOk = x => buvAll || (x.buvette || BUVETTES[0]) === buvActive;
+db.encaissements = db.encaissements || [];
+db.ventes.forEach(v => { if (!v.buvette) v.buvette = BUVETTES[0]; });
+db.inventaires.forEach(i => { if (!i.buvette) i.buvette = BUVETTES[0]; });
+const _save = save;
+save = function () {
+  db.ventes.forEach(v => { if (!v.buvette) v.buvette = buvActive; });
+  db.inventaires.forEach(i => { if (!i.buvette) i.buvette = buvActive; });
+  _save();
+};
+const withBuv = fn => function (...a) {
+  const V = db.ventes, I = db.inventaires;
+  db.ventes = V.filter(buvOk); db.inventaires = I.filter(buvOk);
+  try { return fn.apply(this, a); } finally { db.ventes = V; db.inventaires = I; }
+};
+['renderVentes','renderRecettes','renderTopVentes','renderDashboard','genererRapport','renderInvHist'].forEach(n => { window[n] = withBuv(window[n]); });
+function setBuv(v) { buvActive = v; localStorage.setItem('etsena_buv', v); renderAll(); toast('Buvette active : ' + v, 'ok'); }
+function setBuvAll(c) { buvAll = c; localStorage.setItem('etsena_buvall', c ? '1' : '0'); renderAll(); }
+
+/* ---- Fournisseurs liés partout ---- */
+const FOURN_BASE = ['Production locale','Grossiste Andoharanofotsy','Pran 110','Jelaxy','Hasina'];
+const allFourn = () => [...new Set([...FOURN_BASE, ...db.fournisseurs.map(f => f.nom), ...db.articles.map(a => a.fournisseur)].filter(Boolean))];
+function fillFournSelects() {
+  const opts = allFourn().map(n => `<option value="${n}">${n}</option>`).join('');
+  [['a_fournisseur','<option value="">-- Aucun --</option>',''],['m_fournisseur','<option value="">-- Aucun --</option>',''],['tv_four','<option value="">Tous les articles</option>','<option value="__none__">Sans fournisseur</option>']].forEach(([id, p, q]) => {
+    const el = byId(id); if (!el) return; const cur = el.value;
+    el.innerHTML = p + opts + q; el.value = cur;
+  });
+  byId('fournList').innerHTML = allFourn().map(n => `<option value="${n}">`).join('');
+}
+function editFournisseur(id) {
+  const f = db.fournisseurs.find(x => x.id == id); if (!f) return;
+  const nom = (prompt('Nom du fournisseur :', f.nom) || '').trim(); if (!nom) return;
+  const contact = prompt('Contact :', f.contact || ''), adresse = prompt('Adresse :', f.adresse || ''), old = f.nom;
+  db.fournisseurs.forEach(x => { if (x.nom === old) x.nom = nom; });
+  db.articles.forEach(a => { if (a.fournisseur === old) a.fournisseur = nom; });
+  db.commandes.forEach(c => { if (c.fournisseur === old) c.fournisseur = nom; });
+  if (contact !== null) f.contact = contact; if (adresse !== null) f.adresse = adresse;
+  save(); renderAll(); toast('Fournisseur modifié (articles et commandes mis à jour) ✓', 'ok');
+}
+['addFournisseur','deleteFournisseur'].forEach(n => { const o = window[n]; window[n] = function (...a) { o.apply(this, a); fillFournSelects(); }; });
+const _ra = renderAll;
+renderAll = function () { fillFournSelects(); _ra(); renderEnc(); };
+const _st = showTab;
+showTab = function (e, id) { _st(e, id); if (id === 'encaissement') renderEnc(); };
+
+/* ---- Commandes : modifier / imprimer tout ---- */
+let ceId = null;
+function editCommande(id) {
+  const c = db.commandes.find(x => x.id == id); if (!c) return; ceId = id;
+  byId('ce_art').value = c.articleNom + ' (' + c.conditionnement + ')'; byId('ce_four').value = c.fournisseur || '';
+  byId('ce_qte').value = c.qte; byId('ce_pc').value = c.prixCond; byId('ce_note').value = c.note || '';
+  byId('modalCmd').classList.add('show');
+}
+function saveCmdEdit() {
+  const c = db.commandes.find(x => x.id == ceId); if (!c) return;
+  const q = Number(byId('ce_qte').value) || 0; if (q <= 0) return toast('Quantité invalide', 'err');
+  c.fournisseur = byId('ce_four').value.trim(); c.qte = q; c.prixCond = Number(byId('ce_pc').value) || 0;
+  c.total = c.qte * c.prixCond; c.note = byId('ce_note').value.trim();
+  save(); closeModal('modalCmd'); renderCommande(); toast('Commande modifiée ✓', 'ok');
+}
+function imprimerToutesCommandes() {
+  const att = db.commandes.filter(cmdAttente); if (!att.length) return toast('Aucune commande en attente', 'err');
+  const g = {}; att.forEach(c => { const f = c.fournisseur || 'Sans fournisseur'; (g[f] = g[f] || []).push(c); });
+  let h = `<h1>🛒 e-tsena — Toutes les commandes (${today()})</h1>`, tot = 0;
+  Object.entries(g).forEach(([f, cs]) => {
+    const t = cs.reduce((x, c) => x + c.total, 0); tot += t;
+    h += `<h2 style="margin:16px 0 6px">🚚 ${f}</h2><table><thead><tr><th>Article</th><th>Conditionnement</th><th>Qté</th><th>Prix cond.</th><th>Total</th></tr></thead><tbody>${cs.map(c => `<tr><td>${c.articleNom}</td><td>${c.conditionnement} (${c.qteParCond}p)</td><td>${c.qte}</td><td>${fmt(c.prixCond)} Ar</td><td>${fmt(c.total)} Ar</td></tr>`).join('')}<tr><td colspan="4"><b>Total ${f}</b></td><td><b>${fmt(t)} Ar</b></td></tr></tbody></table>`;
+  });
+  openPrintWindow(h + `<h2 style="margin-top:16px">TOTAL GÉNÉRAL : ${fmt(tot)} Ar</h2>`, 'Commandes');
+}
+
+/* ---- Réinitialisation (articles conservés) ---- */
+function resetData(t) {
+  if (currentUser !== 'admin') return toast('Réservé à l\'admin', 'err');
+  const lab = { ventes: 'les VENTES, inventaires et encaissements', stock: 'les STOCKS (remis à 0)', mouvements: 'les MOUVEMENTS de stock', commandes: 'les COMMANDES', tout: 'TOUT (ventes, inventaires, encaissements, stocks, mouvements, commandes, consommations)' }[t];
+  const b = byId('rs_buv').value, cible = (t === 'ventes' || t === 'tout') && b ? ` pour ${b}` : '';
+  if (!confirm(`Réinitialiser ${lab}${cible} ?\nLes articles sont conservés.`)) return;
+  if ((prompt('Confirmation finale : tapez REINITIALISER') || '').trim().toUpperCase() !== 'REINITIALISER') return toast('Annulé', 'err');
+  exportData();
+  const keep = x => b && (x.buvette || BUVETTES[0]) !== b;
+  if (t === 'ventes' || t === 'tout') { db.ventes = db.ventes.filter(keep); db.inventaires = db.inventaires.filter(keep); db.encaissements = db.encaissements.filter(keep); db.mouvements = db.mouvements.filter(m => !m.invId || db.inventaires.some(i => i.id == m.invId)); }
+  if (t === 'stock' || t === 'tout') { BUVETTES.filter(x => !b || x === b).forEach(x => { db.articles.forEach(a => a.stocks[x] = 0); db.ingredients.forEach(i => i.stocks[x] = 0); }); }
+  if (t === 'mouvements' || t === 'tout') db.mouvements = db.mouvements.filter(keep);
+  if (t === 'commandes' || t === 'tout') db.commandes = db.commandes.filter(keep);
+  if (t === 'tout') db.consoIng = db.consoIng.filter(keep);
+  save(); invTemp = {}; renderAll(); toast('Réinitialisation effectuée ✓ (sauvegarde téléchargée)', 'ok');
+}
+
+/* ---- Encaissement avec billetage ---- */
+const DENOMS = [20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50];
+function renderEncBillets() {
+  byId('encBillets').innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">' + DENOMS.map(d => `<div class="field"><label>${fmt(d)} Ar</label><input type="number" min="0" step="1" id="enc_b_${d}" oninput="calcEnc()" placeholder="0"><small id="enc_s_${d}" style="color:#64748b">= 0 Ar</small></div>`).join('') + '</div>';
+}
+function calcEnc() {
+  let t = 0;
+  DENOMS.forEach(d => { const n = Number(byId('enc_b_' + d).value) || 0; t += n * d; byId('enc_s_' + d).textContent = '= ' + fmt(n * d) + ' Ar'; });
+  byId('enc_total').textContent = fmt(t) + ' Ar'; return t;
+}
+function saveEnc() {
+  const date = byId('enc_date').value || today(), num = Number(byId('enc_num').value), total = calcEnc();
+  if (!total) return toast('Saisissez le billetage', 'err');
+  const mine = db.encaissements.filter(e => e.date === date && e.buvette === buvActive);
+  if (mine.length >= 4) return toast('Maximum 4 encaissements par jour pour cette buvette', 'err');
+  if (mine.some(e => e.num === num)) return toast(`Le passage n°${num} existe déjà`, 'err');
+  const billets = {}; DENOMS.forEach(d => { const n = Number(byId('enc_b_' + d).value) || 0; if (n) billets[d] = n; });
+  db.encaissements.push({ id: uid(), date, buvette: buvActive, num, billets, total, note: byId('enc_note').value.trim() });
+  save(); DENOMS.forEach(d => byId('enc_b_' + d).value = ''); byId('enc_note').value = ''; calcEnc(); renderEnc();
+  toast(`Encaissement n°${num} enregistré : ${fmt(total)} Ar ✓`, 'ok');
+}
+function deleteEnc(id) {
+  if (!confirm('Supprimer cet encaissement ?')) return;
+  db.encaissements = db.encaissements.filter(e => e.id != id); save(); renderEnc();
+}
+function renderEnc() {
+  if (!byId('encCompare')) return;
+  byId('enc_buv').textContent = buvActive;
+  const date = byId('enc_date').value || today();
+  const used = db.encaissements.filter(e => e.date === date && e.buvette === buvActive).map(e => e.num), free = [1, 2, 3, 4].find(n => !used.includes(n));
+  byId('enc_num').innerHTML = [1, 2, 3, 4].map(n => `<option ${used.includes(n) ? 'disabled' : ''} ${n === free ? 'selected' : ''}>${n}</option>`).join('');
+  const jour = db.encaissements.filter(e => e.date === date && buvOk(e)).sort((a, b) => a.num - b.num);
+  byId('encJour').innerHTML = jour.length ? `<table><thead><tr><th>Buvette</th><th>N°</th><th>Total</th><th>Billetage</th><th>Note</th><th></th></tr></thead><tbody>${jour.map(e => `<tr><td>${e.buvette}</td><td><b>${e.num}</b></td><td><b>${fmt(e.total)} Ar</b></td><td style="font-size:12px">${Object.entries(e.billets).map(([d, n]) => fmt(d) + '×' + n).join(' • ')}</td><td>${e.note || '—'}</td><td><button class="btn btn-danger btn-sm" onclick="deleteEnc(${e.id})">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="empty">Aucun encaissement ce jour.</div>';
+  const du = byId('ec_du').value, au = byId('ec_au').value, R = {};
+  const row = (d, b) => (R[d + '|' + b] = R[d + '|' + b] || { date: d, buv: b, enc: 0, vente: 0, n: 0 });
+  const inR = d => (!du || d >= du) && (!au || d <= au);
+  db.encaissements.filter(e => buvOk(e) && inR(e.date)).forEach(e => { const r = row(e.date, e.buvette); r.enc += e.total; r.n++; });
+  db.ventes.filter(v => buvOk(v) && inR(v.date)).forEach(v => { row(v.date, v.buvette || BUVETTES[0]).vente += v.total; });
+  const L = Object.values(R).sort((a, b) => b.date.localeCompare(a.date) || a.buv.localeCompare(b.buv));
+  if (!L.length) { byId('encCompare').innerHTML = '<div class="empty">Aucune donnée sur la période.</div>'; return; }
+  let T = { enc: 0, vente: 0 };
+  const body = L.map(r => {
+    const d = r.enc - r.vente; T.enc += r.enc; T.vente += r.vente;
+    const st = !r.n ? '⚠️ Pas d\'encaissement' : d === 0 ? '✅ Juste' : d > 0 ? '➕ Excédent' : '➖ Manque';
+    return `<tr><td><b>${r.date}</b></td><td>${r.buv}</td><td>${r.n}/4</td><td>${fmt(r.enc)} Ar</td><td>${fmt(r.vente)} Ar</td><td style="font-weight:800;color:${d < 0 ? '#dc2626' : d > 0 ? '#16a34a' : '#64748b'}">${d > 0 ? '+' : ''}${fmt(d)} Ar</td><td>${st}</td></tr>`;
+  }).join('');
+  const D = T.enc - T.vente;
+  byId('encCompare').innerHTML = `<table><thead><tr><th>Date</th><th>Buvette</th><th>Passages</th><th>Perçu</th><th>Vendu (articles)</th><th>Écart</th><th>Statut</th></tr></thead><tbody>${body}</tbody><tfoot><tr style="font-weight:800;background:#eff6ff"><td colspan="3">TOTAL</td><td>${fmt(T.enc)} Ar</td><td>${fmt(T.vente)} Ar</td><td style="color:${D < 0 ? '#dc2626' : '#16a34a'}">${D > 0 ? '+' : ''}${fmt(D)} Ar</td><td></td></tr></tfoot></table>`;
+}
+(function () {
+  byId('buvSel').value = buvActive; byId('buvAll').checked = buvAll;
+  byId('enc_date').value = today(); byId('ec_au').value = today();
+  const d = new Date(); d.setDate(d.getDate() - 6); byId('ec_du').value = isoLocal(d);
+  renderEncBillets(); fillFournSelects();
+})();
+
+/* ===================== v12 : buvettes indépendantes ===================== */
+let stockCtx = null;
+const sctx = () => stockCtx || buvActive;
+const shortB = b => b.replace(/ \(.*\)/, '');
+function withCtx(b, fn) { const p = stockCtx; stockCtx = b || null; try { return fn(); } finally { stockCtx = p; } }
+function bindStock(o, initB) {
+  if (!o.stocks) { o.stocks = {}; o.stocks[initB] = Number(o.stock) || 0; }
+  BUVETTES.forEach(b => { if (o.stocks[b] === undefined) o.stocks[b] = 0; });
+  const d = Object.getOwnPropertyDescriptor(o, 'stock');
+  if (!d || !d.get) Object.defineProperty(o, 'stock', { get() { return this.stocks[sctx()] || 0; }, set(v) { this.stocks[sctx()] = v; }, enumerable: false, configurable: true });
+}
+const bindAll = b => { db.articles.forEach(a => bindStock(a, b)); db.ingredients.forEach(i => bindStock(i, b)); };
+const tagAll = b => { ['mouvements', 'commandes', 'consoIng'].forEach(k => db[k].forEach(x => { if (!x.buvette) x.buvette = b; })); db.articles.forEach(a => { if (a.fournisseur === 'Production locale') a.pa = 0; }); };
+bindAll(BUVETTES[0]); tagAll(BUVETTES[0]);              // données existantes -> Buvette 1
+const _save2 = save;
+save = function () { bindAll(buvActive); tagAll(buvActive); _save2(); };
+const withBuv2 = fn => function (...a) {
+  const M = db.mouvements, C = db.commandes, K = db.consoIng;
+  db.mouvements = M.filter(buvOk); db.commandes = C.filter(buvOk); db.consoIng = K.filter(buvOk);
+  try { return fn.apply(this, a); } finally { db.mouvements = M; db.commandes = C; db.consoIng = K; }
+};
+['renderCommande','renderCommandesParFournisseur','imprimerCommandeFournisseur','imprimerToutesCommandes','renderMouvements','renderConsoIng','renderDashboard','genererRapport','renderRecettes','renderIngredients','renderStock','renderStockIng'].forEach(n => { if (window[n]) window[n] = withBuv2(window[n]); });
+const ctxWrap = (name, col) => { const o = window[name]; window[name] = function (id, ...r) { const x = db[col].find(y => y.id == id); const res = withCtx(x && x.buvette, () => o.call(this, id, ...r)); renderAll(); return res; }; };
+[['deleteVente','ventes'],['deleteInventaire','inventaires'],['deleteMouvement','mouvements'],['deleteCommande','commandes'],['receptionnerCommande','commandes'],['deleteConso','consoIng']].forEach(([n, c]) => ctxWrap(n, c));
+const _sb = setBuv; setBuv = function (v) { invTemp = {}; _sb(v); };
+const _opw = openPrintWindow; openPrintWindow = (h, t) => _opw(`<p><b>${buvAll ? 'Les 2 buvettes' : buvActive}</b></p>` + h, t);
+const _ra2 = renderAll; renderAll = function () { _ra2(); renderStockRapport(); };
+const _st2 = showTab; showTab = function (e, id) { _st2(e, id); if (id === 'rapport') renderStockRapport(); };
+
+/* ---- Production locale : pas de prix d'achat ---- */
+function prodLocalUI() {
+  [['a_fournisseur', 'a_pa'], ['m_fournisseur', 'm_pa']].forEach(([f, p]) => {
+    const F = byId(f), P = byId(p); if (!F || !P) return;
+    const loc = F.value === 'Production locale';
+    if (loc) P.value = 0; P.disabled = loc; P.title = loc ? 'Production locale : pas de prix d\'achat (prix de vente seulement)' : '';
+  });
+}
+['a_fournisseur', 'm_fournisseur'].forEach(i => byId(i).addEventListener('change', prodLocalUI));
+['openEditArticle', 'addArticle'].forEach(n => { const o = window[n]; window[n] = function (...a) { const r = o.apply(this, a); prodLocalUI(); return r; }; });
+
+/* ---- Rapport de stock : totalité / par buvette ---- */
+function renderStockRapport() {
+  const box = byId('stockRapport'); if (!box) return;
+  const sel = byId('sr_buv').value, du = byId('sr_du').value, au = byId('sr_au').value, Bs = sel ? [sel] : BUVETTES;
+  const inR = d => (!du || d >= du) && (!au || d <= au);
+  const mv = (id, b, t) => db.mouvements.filter(m => m.articleId == id && (m.buvette || BUVETTES[0]) === b && m.type === t && inR(m.date)).reduce((x, m) => x + m.qte, 0);
+  let TA = 0, TV = 0;
+  const rows = [...db.articles].sort((x, y) => x.nom.localeCompare(y.nom, 'fr')).map(a => {
+    const st = Bs.map(b => a.stocks[b] || 0), tot = st.reduce((x, y) => x + y, 0), low = Bs.filter((b, i) => st[i] <= a.min).map(shortB);
+    const va = tot * (a.fournisseur === 'Production locale' ? 0 : a.pa), vv = tot * a.pv; TA += va; TV += vv;
+    return `<tr><td><b>${a.nom}</b></td><td>${a.categorie || '—'}</td>${st.map(v => `<td>${fmt(v)}</td>`).join('')}${sel ? `<td style="color:#16a34a">+${fmt(mv(a.id, sel, 'entree'))}</td><td style="color:#dc2626">-${fmt(mv(a.id, sel, 'sortie'))}</td>` : `<td><b>${fmt(tot)}</b></td>`}<td>${fmt(va)}</td><td>${fmt(vv)}</td><td>${low.length ? '⚠️ ' + low.join(', ') : '✅'}</td></tr>`;
+  }).join('');
+  const head = '<th>Article</th><th>Catégorie</th>' + Bs.map(b => `<th>Stock ${shortB(b)}</th>`).join('') + (sel ? '<th>Entrées</th><th>Sorties</th>' : '<th>Total</th>') + '<th>Valeur achat</th><th>Valeur vente</th><th>Statut</th>';
+  const span = 2 + Bs.length + (sel ? 2 : 1);
+  const ing = db.ingredients.length ? `<h3 style="margin:14px 0 6px">🥣 Ingrédients</h3><table><thead><tr><th>Ingrédient</th>${Bs.map(b => `<th>${shortB(b)}</th>`).join('')}${sel ? '' : '<th>Total</th>'}<th>Unité</th></tr></thead><tbody>${db.ingredients.map(i => `<tr><td><b>${i.nom}</b></td>${Bs.map(b => `<td>${fmt(i.stocks[b] || 0)}</td>`).join('')}${sel ? '' : `<td><b>${fmt(Bs.reduce((x, b) => x + (i.stocks[b] || 0), 0))}</b></td>`}<td>${i.unite || ''}</td></tr>`).join('')}</tbody></table>` : '';
+  box.innerHTML = db.articles.length ? `<table><thead><tr>${head}</tr></thead><tbody>${rows}</tbody><tfoot><tr style="font-weight:800;background:#eff6ff"><td colspan="${span}">VALEUR DU STOCK (${sel ? shortB(sel) : 'les 2 buvettes'})</td><td>${fmt(TA)} Ar</td><td>${fmt(TV)} Ar</td><td></td></tr></tfoot></table>${ing}` : '<div class="empty">Aucun article.</div>';
+}
+try { prodLocalUI(); fillFournSelects(); save(); renderAll(); } catch (e) { console.error(e); }
+</script>
+
+</body>
+</html>
